@@ -24,6 +24,9 @@ export const RootLayout: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [authEmail, setAuthEmail] = useState('user@financeos.com');
   const [authPassword, setAuthPassword] = useState('password123');
+  const [authFirstName, setAuthFirstName] = useState('');
+  const [authLastName, setAuthLastName] = useState('');
+  const [authPhone, setAuthPhone] = useState('');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -93,7 +96,14 @@ export const RootLayout: React.FC = () => {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({
           email: authEmail,
-          password: authPassword
+          password: authPassword,
+          options: {
+            data: {
+              first_name: authFirstName,
+              last_name: authLastName,
+              phone: authPhone
+            }
+          }
         });
         if (error) throw error;
         alert('Welcome! Your sandbox account is set up. Click Login.');
@@ -171,6 +181,47 @@ export const RootLayout: React.FC = () => {
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{authError}</span>
               </div>
+            )}
+
+            {isSignUp && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-muted-foreground">First Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={authFirstName}
+                      onChange={(e) => setAuthFirstName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      placeholder="John"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-muted-foreground">Last Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={authLastName}
+                      onChange={(e) => setAuthLastName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      placeholder="Doe"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-muted-foreground">Mobile Number</label>
+                  <input
+                    type="tel"
+                    required
+                    value={authPhone}
+                    onChange={(e) => setAuthPhone(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    placeholder="e.g. +1 555-555-5555"
+                  />
+                </div>
+              </>
             )}
 
             <div className="flex flex-col gap-1">

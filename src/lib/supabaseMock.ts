@@ -708,15 +708,24 @@ class MockQueryBuilder {
 
 // Simulated Auth Controller
 const mockAuth = {
-  signUp: async ({ email }: { email: string }) => {
-    const session = { user: { id: 'mock-user-id', email }, access_token: 'mock-auth-token-123' };
+  signUp: async ({ email, options }: { email: string; options?: { data?: any } }) => {
+    const session = { 
+      user: { 
+        id: 'mock-user-id', 
+        email, 
+        user_metadata: options?.data || {} 
+      }, 
+      access_token: 'mock-auth-token-123' 
+    };
     localStorage.setItem('financeos_session', JSON.stringify(session));
     return { data: session, error: null };
   },
   signInWithPassword: async ({ email }: { email: string }) => {
-    const session = { user: { id: 'mock-user-id', email }, access_token: 'mock-auth-token-123' };
-    localStorage.setItem('financeos_session', JSON.stringify(session));
-    return { data: session, error: null };
+    const session = { user: { id: 'mock-user-id', email, user_metadata: { first_name: 'John', last_name: 'Doe', phone: '+1 555-555-5555' } }, access_token: 'mock-auth-token-123' };
+    const sessionStr = localStorage.getItem('financeos_session');
+    const currentSession = sessionStr ? JSON.parse(sessionStr) : session;
+    localStorage.setItem('financeos_session', JSON.stringify(currentSession));
+    return { data: currentSession, error: null };
   },
   signOut: async () => {
     localStorage.removeItem('financeos_session');
@@ -729,6 +738,19 @@ const mockAuth = {
   getUser: async () => {
     const sessionStr = localStorage.getItem('financeos_session');
     return { data: { user: sessionStr ? JSON.parse(sessionStr).user : null }, error: null };
+  },
+  updateUser: async ({ data }: { data: any }) => {
+    const sessionStr = localStorage.getItem('financeos_session');
+    if (sessionStr) {
+      const session = JSON.parse(sessionStr);
+      session.user.user_metadata = {
+        ...session.user.user_metadata,
+        ...data
+      };
+      localStorage.setItem('financeos_session', JSON.stringify(session));
+      return { data: { user: session.user }, error: null };
+    }
+    return { data: { user: null }, error: new Error('No session active') };
   },
   onAuthStateChange: (callback: (event: string, session: any) => void) => {
     const sessionStr = localStorage.getItem('financeos_session');

@@ -379,7 +379,7 @@ export const Transactions: React.FC = () => {
         title="Add Spend or Income"
       >
         <form onSubmit={handleSave} className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
               <label className="text-[11px] font-bold text-muted-foreground">Type</label>
               <select
@@ -409,7 +409,7 @@ export const Transactions: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
               <label className="text-[11px] font-bold text-muted-foreground">Description / Source</label>
               <input

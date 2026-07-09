@@ -2,15 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { 
   Sun, Moon, Monitor, 
-  RefreshCw, ShieldCheck, Globe 
+  RefreshCw, ShieldCheck, Globe, User, ShieldAlert
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Dialog } from '../components/ui/Dialog';
 
 export const Settings: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [currency, setCurrency] = useState('USD');
   const [currencies, setCurrencies] = useState<any[]>([]);
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [profileMsg, setProfileMsg] = useState('');
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  const [userEmail, setUserEmail] = useState('');
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     // Load initial settings theme
@@ -28,7 +41,41 @@ export const Settings: React.FC = () => {
         setCurrency(data.base_currency_id);
       }
     });
+
+    // Fetch logged-in user profile metadata
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setUserEmail(user.email || '');
+        if (user.user_metadata) {
+          setFirstName(user.user_metadata.first_name || '');
+          setLastName(user.user_metadata.last_name || '');
+          setPhone(user.user_metadata.phone || '');
+        }
+      }
+    });
   }, []);
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileLoading(true);
+    setProfileMsg('');
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone
+        }
+      });
+      if (error) throw error;
+      setProfileMsg('Profile updated successfully!');
+      setTimeout(() => setProfileMsg(''), 3000);
+    } catch (err: any) {
+      setProfileMsg(`Error: ${err.message}`);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
@@ -53,10 +100,34 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const handleResetData = () => {
-    if (!confirm('This will wipe all custom entries and restore the demo logs. Continue?')) return;
-    localStorage.clear();
-    window.location.reload();
+  const triggerResetOpen = () => {
+    setConfirmPassword('');
+    setResetError('');
+    setIsResetModalOpen(true);
+  };
+
+  const handleResetConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    setResetLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: confirmPassword
+      });
+
+      if (error) {
+        throw new Error('Incorrect password. Please try again.');
+      }
+
+      localStorage.clear();
+      window.location.reload();
+    } catch (err: any) {
+      setResetError(err.message || 'Incorrect password.');
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   return (
@@ -69,6 +140,68 @@ export const Settings: React.FC = () => {
       </div>
 
       <div className="max-w-2xl space-y-6">
+
+        {/* Profile Settings Card */}
+        <Card>
+          <CardHeader className="pb-3 select-none">
+            <CardTitle className="text-sm flex items-center gap-1.5">
+              <User className="h-4.5 w-4.5 text-primary" />
+              Profile Settings
+            </CardTitle>
+            <CardDescription className="text-xs">Update your personal contact details and names</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleProfileUpdate} className="space-y-4">
+              {profileMsg && (
+                <div className={`p-3 rounded-lg border text-xs font-semibold ${
+                  profileMsg.startsWith('Error') 
+                    ? 'bg-destructive/10 border-destructive/25 text-destructive' 
+                    : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-500'
+                }`}>
+                  {profileMsg}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-muted-foreground">First Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-muted-foreground">Last Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-muted-foreground">Mobile Number</label>
+                <input
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                />
+              </div>
+
+              <Button type="submit" loading={profileLoading} className="py-2 px-4 text-xs font-bold cursor-pointer">
+                Save Profile Details
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
         
         {/* Color Theme Preference */}
         <Card>
@@ -129,7 +262,7 @@ export const Settings: React.FC = () => {
               >
                 {currencies.map(c => (
                   <option key={c.id} value={c.id}>
-                    {c.id} — {c.name} ({c.symbol})
+                    {c.name} ({c.symbol})
                   </option>
                 ))}
               </select>
@@ -148,7 +281,7 @@ export const Settings: React.FC = () => {
           </CardHeader>
           <CardContent>
             <Button
-              onClick={handleResetData}
+              onClick={triggerResetOpen}
               variant="danger"
               size="sm"
               className="text-xs py-2 cursor-pointer flex items-center gap-1.5"
@@ -158,6 +291,53 @@ export const Settings: React.FC = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* CONFIRM RESET DIALOG */}
+        <Dialog
+          isOpen={isResetModalOpen}
+          onClose={() => setIsResetModalOpen(false)}
+          title="Confirm Reset Request"
+        >
+          <form onSubmit={handleResetConfirm} className="flex flex-col gap-4">
+            <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl flex gap-3 text-xs text-foreground items-start select-none">
+              <ShieldAlert className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-rose-500">Irreversible Action Warning</span>
+                <p className="text-muted-foreground mt-0.5">
+                  This action will wipe all custom entries (transactions, goals, bills, and furnishing details) and restore the default demo workspace.
+                </p>
+              </div>
+            </div>
+
+            {resetError && (
+              <div className="p-3 rounded-lg border text-xs font-semibold bg-destructive/10 border-destructive/25 text-destructive animate-none">
+                {resetError}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-bold text-muted-foreground select-none">Confirm Password</label>
+              <input
+                type="password"
+                required
+                autoFocus
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                placeholder="Enter your password to verify"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-border/40 pt-4 mt-2 select-none">
+              <Button type="button" variant="outline" onClick={() => setIsResetModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="danger" loading={resetLoading}>
+                Verify & Reset Data
+              </Button>
+            </div>
+          </form>
+        </Dialog>
 
       </div>
 
