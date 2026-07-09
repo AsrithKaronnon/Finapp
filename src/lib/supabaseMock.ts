@@ -732,6 +732,10 @@ const mockAuth = {
     localStorage.removeItem('financeos_session');
     return { error: null };
   },
+  resetPasswordForEmail: async (email: string, _options?: { redirectTo?: string }) => {
+    console.log('[Mock Auth] resetPasswordForEmail called for:', email);
+    return { data: {}, error: null };
+  },
   getSession: async () => {
     const sessionStr = localStorage.getItem('financeos_session');
     return { data: { session: sessionStr ? JSON.parse(sessionStr) : null }, error: null };
@@ -740,14 +744,19 @@ const mockAuth = {
     const sessionStr = localStorage.getItem('financeos_session');
     return { data: { user: sessionStr ? JSON.parse(sessionStr).user : null }, error: null };
   },
-  updateUser: async ({ data }: { data: any }) => {
+  updateUser: async ({ data, password, email, phone }: { data?: any; password?: string; email?: string; phone?: string }) => {
+    if (password) console.log('[Mock Auth] Mock updated user password');
     const sessionStr = localStorage.getItem('financeos_session');
     if (sessionStr) {
       const session = JSON.parse(sessionStr);
-      session.user.user_metadata = {
-        ...session.user.user_metadata,
-        ...data
-      };
+      if (data) {
+        session.user.user_metadata = {
+          ...session.user.user_metadata,
+          ...data
+        };
+      }
+      if (email) session.user.email = email;
+      if (phone) session.user.phone = phone;
       localStorage.setItem('financeos_session', JSON.stringify(session));
       return { data: { user: session.user }, error: null };
     }

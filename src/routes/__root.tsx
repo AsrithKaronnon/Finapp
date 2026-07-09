@@ -111,11 +111,32 @@ export const RootLayout: React.FC = () => {
         const { data, error } = await supabase.auth.signInWithPassword(credentials as any);
         if (error) throw error;
         setSession(data);
+        navigate({ to: '/' });
       }
     } catch (err: any) {
       setAuthError(err.message || 'Authentication failed');
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!authEmail.trim()) {
+      toast.error('Please enter your email address in the field above first.');
+      return;
+    }
+    if (!authEmail.includes('@')) {
+      toast.error('Please enter a valid email address to request a password reset.');
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(authEmail.trim(), {
+        redirectTo: window.location.origin + window.location.pathname
+      });
+      if (error) throw error;
+      toast.success('Password reset email sent successfully! Check your inbox.');
+    } catch (err: any) {
+      toast.error(err.message || 'Error sending reset email');
     }
   };
 
@@ -240,7 +261,18 @@ export const RootLayout: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-bold text-muted-foreground">Password</label>
+              <div className="flex justify-between items-center select-none">
+                <label className="text-[11px] font-bold text-muted-foreground">Password</label>
+                {!isSignUp && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-[10px] text-primary hover:underline cursor-pointer"
+                  >
+                    Forgot Password?
+                  </button>
+                )}
+              </div>
               <input
                 type="password"
                 required

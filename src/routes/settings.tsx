@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { 
   Sun, Moon, Monitor, 
-  RefreshCw, ShieldCheck, Globe, User, ShieldAlert, Sparkles
+  RefreshCw, ShieldCheck, Globe, User, ShieldAlert, KeyRound, LogOut
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -25,8 +25,12 @@ export const Settings: React.FC = () => {
   const [resetError, setResetError] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
 
-  const [geminiKey, setGeminiKey] = useState('');
-  const [geminiMsg, setGeminiMsg] = useState('');
+  // Password Update State
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState('');
 
   useEffect(() => {
     // Load initial settings theme
@@ -45,9 +49,7 @@ export const Settings: React.FC = () => {
       }
     });
 
-    // Fetch stored Gemini API Key
-    const storedKey = window.localStorage.getItem('gemini_api_key') || '';
-    setGeminiKey(storedKey);
+
 
     // Fetch logged-in user profile metadata
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -62,11 +64,56 @@ export const Settings: React.FC = () => {
     });
   }, []);
 
-  const handleSaveGeminiKey = (e: React.FormEvent) => {
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    window.localStorage.setItem('gemini_api_key', geminiKey.trim());
-    setGeminiMsg('Gemini API Key updated successfully!');
-    setTimeout(() => setGeminiMsg(''), 3000);
+    if (!oldPassword.trim() || !newPassword.trim() || !confirmNewPassword.trim()) {
+      setPasswordMsg('Error: All password fields are required.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordMsg('Error: New passwords do not match.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordMsg('Error: New password must be at least 6 characters.');
+      return;
+    }
+    setPasswordLoading(true);
+    setPasswordMsg('');
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+      const email = user?.email;
+      const phone = user?.phone;
+      
+      const credentials = email 
+        ? { email, password: oldPassword }
+        : { phone, password: oldPassword };
+        
+      const { error: signInErr } = await supabase.auth.signInWithPassword(credentials as any);
+      if (signInErr) {
+        throw new Error('Incorrect previous password.');
+      }
+
+      const { error: updateErr } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (updateErr) throw updateErr;
+
+      setPasswordMsg('Password changed successfully!');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setTimeout(() => setPasswordMsg(''), 4000);
+    } catch (err: any) {
+      setPasswordMsg(`Error: ${err.message}`);
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
   };
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -217,48 +264,66 @@ export const Settings: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* AI Integrations Card */}
-        <Card className="border border-primary/20 bg-primary/5 bg-gradient-to-r from-primary/5 to-indigo-500/5">
+        {/* Change Password Card */}
+        <Card>
           <CardHeader className="pb-3 select-none">
-            <CardTitle className="text-sm flex items-center gap-1.5 text-primary">
-              <Sparkles className="h-4.5 w-4.5 text-primary animate-pulse" />
-              AI Helper Integrations
+            <CardTitle className="text-sm flex items-center gap-1.5">
+              <KeyRound className="h-4.5 w-4.5 text-primary" />
+              Change Password
             </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">
-              Provide your own free Google Gemini API key to enable intelligent, format-free NLP parsing in the Quick Log.
-            </CardDescription>
+            <CardDescription className="text-xs">Update your security password for credentials authentication</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSaveGeminiKey} className="space-y-4">
-              {geminiMsg && (
-                <div className="p-3 rounded-lg border text-xs font-semibold bg-emerald-500/10 border-emerald-500/25 text-emerald-500 animate-none">
-                  {geminiMsg}
+            <form onSubmit={handlePasswordUpdate} className="space-y-4">
+              {passwordMsg && (
+                <div className={`p-3 rounded-lg border text-xs font-semibold ${
+                  passwordMsg.startsWith('Error') 
+                    ? 'bg-destructive/10 border-destructive/25 text-destructive' 
+                    : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-500'
+                }`}>
+                  {passwordMsg}
                 </div>
               )}
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-muted-foreground select-none flex justify-between">
-                  <span>Gemini API Key</span>
-                  <a 
-                    href="https://aistudio.google.com/" 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="text-primary hover:underline font-bold"
-                  >
-                    Get Free API Key from Google AI Studio &rarr;
-                  </a>
-                </label>
+                <label className="text-[11px] font-bold text-muted-foreground">Previous Password</label>
                 <input
                   type="password"
-                  value={geminiKey}
-                  onChange={(e) => setGeminiKey(e.target.value)}
-                  placeholder="Paste your AI Studio API key here (AIzaSy...)"
+                  required
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                  placeholder="Enter previous password"
                 />
               </div>
 
-              <Button type="submit" className="py-2 px-4 text-xs font-bold cursor-pointer">
-                Save API Key
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-muted-foreground">New Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                    placeholder="Min 6 characters"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-muted-foreground">Confirm New Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                    placeholder="Repeat new password"
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" loading={passwordLoading} className="py-2 px-4 text-xs font-bold cursor-pointer">
+                Change Password
               </Button>
             </form>
           </CardContent>
@@ -349,6 +414,28 @@ export const Settings: React.FC = () => {
             >
               <RefreshCw className="h-4 w-4" />
               Reset My Data
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Log Out card for mobile screens */}
+        <Card className="md:hidden border-destructive/20 bg-destructive/5">
+          <CardHeader className="pb-3 select-none">
+            <CardTitle className="text-sm text-destructive flex items-center gap-1.5">
+              <LogOut className="h-4.5 w-4.5 text-destructive" />
+              Sign Out
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground/80">Log out of your current session on this device</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={handleSignOut}
+              variant="danger"
+              size="sm"
+              className="text-xs py-2 cursor-pointer flex items-center gap-1.5"
+            >
+              <LogOut className="h-4 w-4" />
+              Log Out
             </Button>
           </CardContent>
         </Card>
