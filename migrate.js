@@ -248,6 +248,17 @@ async function main() {
         created_at TIMESTAMPTZ DEFAULT NOW(),
         created_by UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid()
       );
+
+      CREATE TABLE logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        error_message TEXT NOT NULL,
+        error_stack TEXT DEFAULT '',
+        component_stack TEXT DEFAULT '',
+        url VARCHAR(500) DEFAULT NULL,
+        user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+        notes TEXT DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
     `);
 
     // 4. Enable Row Level Security (RLS)
@@ -260,6 +271,7 @@ async function main() {
       ALTER TABLE loans ENABLE ROW LEVEL SECURITY;
       ALTER TABLE bills ENABLE ROW LEVEL SECURITY;
       ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE logs ENABLE ROW LEVEL SECURITY;
       
       ALTER TABLE currencies ENABLE ROW LEVEL SECURITY;
       ALTER TABLE expense_categories ENABLE ROW LEVEL SECURITY;
@@ -315,6 +327,10 @@ async function main() {
       CREATE POLICY "Users can read own notifications" ON notifications FOR SELECT TO authenticated USING (auth.uid() = created_by);
       CREATE POLICY "Users can update own notifications" ON notifications FOR UPDATE TO authenticated USING (auth.uid() = created_by);
       CREATE POLICY "Users can delete own notifications" ON notifications FOR DELETE TO authenticated USING (auth.uid() = created_by);
+
+      -- Logs Policies
+      CREATE POLICY "Anyone can insert logs" ON logs FOR INSERT WITH CHECK (true);
+      CREATE POLICY "Users can read own logs" ON logs FOR SELECT TO authenticated USING (auth.uid() = user_id);
 
       -- Master tables read access for everyone
       CREATE POLICY "Anyone can read currencies" ON currencies FOR SELECT TO authenticated, anon USING (true);

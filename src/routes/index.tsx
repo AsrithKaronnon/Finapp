@@ -27,6 +27,10 @@ export const Dashboard: React.FC = () => {
   // Pay Modal State
   const [payingBill, setPayingBill] = useState<any | null>(null);
 
+  // Quick Add State
+  const [quickAddVal, setQuickAddVal] = useState('');
+  const [quickAddLoading, setQuickAddLoading] = useState(false);
+
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -147,6 +151,178 @@ export const Dashboard: React.FC = () => {
 
   const trendData = getTrendData();
 
+  // Quick Add NLP Parser (Coffee 5, Uber 20)
+  const autoCategorize = (text: string) => {
+    const term = text.toLowerCase();
+    if (term.includes('tea') || term.includes('coffee') || term.includes('starbucks') || term.includes('food') || term.includes('restaurant')) {
+      return SEED.expense_categories.food;
+    }
+    if (term.includes('fuel') || term.includes('petrol') || term.includes('gas') || term.includes('uber') || term.includes('cab')) {
+      return SEED.expense_categories.transport;
+    }
+    if (term.includes('rent') || term.includes('apartment') || term.includes('housing')) {
+      return SEED.expense_categories.housing;
+    }
+    if (term.includes('wifi') || term.includes('internet') || term.includes('electricity')) {
+      return SEED.expense_categories.utilities;
+    }
+    if (term.includes('netflix') || term.includes('spotify') || term.includes('gym')) {
+      return SEED.expense_categories.entertainment;
+    }
+    return SEED.expense_categories.shopping;
+  };
+
+  const parseLocal = (val: string) => {
+    const parts = val.trim().split(/\s+/);
+    let amount = 0;
+    let amountIndex = -1;
+
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const num = parseFloat(parts[i]);
+      if (!isNaN(num)) {
+        amount = num;
+        amountIndex = i;
+        break;
+      }
+    }
+
+    if (amountIndex === -1 || amount <= 0) {
+      toast.error('Format incorrect. Type: [Merchant] [Amount] (e.g. Starbucks 5)');
+      return null;
+    }
+
+    const merchantParts = parts.slice(0, amountIndex);
+    const merchant = merchantParts.join(' ') || 'General Entry';
+    const isIncome = merchant.toLowerCase().includes('salary') || merchant.toLowerCase().includes('paycheck') || merchant.toLowerCase().includes('freelance');
+    const categoryId = isIncome ? SEED.income_categories.salary : autoCategorize(merchant);
+
+    return { amount, merchant, isIncome, categoryId };
+  };
+
+  const handleQuickAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickAddVal.trim() || accounts.length === 0) return;
+
+    const apiKey = window.localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY;
+    
+    let amount = 0;
+    let merchant = 'General Entry';
+    let isIncome = false;
+    let categoryId = SEED.expense_categories.shopping;
+
+    if (apiKey) {
+      setQuickAddLoading(true);
+      try {
+        const prompt = `Parse this transaction into JSON. Return ONLY the JSON object.
+Categories: Food, Transport, Housing, Utilities, Entertainment, Shopping.
+Input: "${quickAddVal}"`;
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{ text: prompt }]
+              }],
+              generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                  type: "OBJECT",
+                  properties: {
+                    merchant: { type: "STRING" },
+                    amount: { type: "NUMBER" },
+                    is_income: { type: "BOOLEAN" },
+                    category: { type: "STRING", enum: ["Food", "Transport", "Housing", "Utilities", "Entertainment", "Shopping"] }
+                  },
+                  required: ["merchant", "amount", "is_income", "category"]
+                }
+              }
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('API request failed');
+        }
+
+        const data = await response.json();
+        const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!resultText) {
+          throw new Error('No text returned from Gemini');
+        }
+
+        const parsed = JSON.parse(resultText);
+        amount = parsed.amount || 0;
+        merchant = parsed.merchant || 'General Entry';
+        isIncome = !!parsed.is_income;
+
+        // Map category
+        if (isIncome) {
+          const mLower = merchant.toLowerCase();
+          if (mLower.includes('salary') || mLower.includes('paycheck')) {
+            categoryId = SEED.income_categories.salary;
+          } else if (mLower.includes('invest') || mLower.includes('stock') || mLower.includes('div')) {
+            categoryId = SEED.income_categories.investments;
+          } else {
+            categoryId = SEED.income_categories.freelance;
+          }
+        } else {
+          const cat = parsed.category;
+          if (cat === 'Food') categoryId = SEED.expense_categories.food;
+          else if (cat === 'Transport') categoryId = SEED.expense_categories.transport;
+          else if (cat === 'Housing') categoryId = SEED.expense_categories.housing;
+          else if (cat === 'Utilities') categoryId = SEED.expense_categories.utilities;
+          else if (cat === 'Entertainment') categoryId = SEED.expense_categories.entertainment;
+          else categoryId = SEED.expense_categories.shopping;
+        }
+      } catch (err) {
+        console.error('Gemini NLP parsing failed, falling back to local:', err);
+        const localParsed = parseLocal(quickAddVal);
+        if (!localParsed) return;
+        amount = localParsed.amount;
+        merchant = localParsed.merchant;
+        isIncome = localParsed.isIncome;
+        categoryId = localParsed.categoryId;
+      } finally {
+        setQuickAddLoading(false);
+      }
+    } else {
+      const localParsed = parseLocal(quickAddVal);
+      if (!localParsed) return;
+      amount = localParsed.amount;
+      merchant = localParsed.merchant;
+      isIncome = localParsed.isIncome;
+      categoryId = localParsed.categoryId;
+    }
+
+    const newTx = {
+      date: new Date().toISOString().split('T')[0],
+      amount,
+      transaction_type_id: isIncome ? SEED.transaction_types.income : SEED.transaction_types.expense,
+      category_id: categoryId,
+      account_id: accounts[0].id,
+      payment_method_id: SEED.payment_methods.debit_card,
+      merchant,
+      notes: `Quick entry: "${quickAddVal}"`,
+      tags: ['Essential'],
+      is_recurring: false
+    };
+
+    try {
+      const { error } = await supabase.from('transactions').insert([newTx]);
+      if (error) throw error;
+      setQuickAddVal('');
+      fetchData();
+      toast.success('Quick entry saved successfully!');
+    } catch (err) {
+      toast.error('Error entering spend');
+    }
+  };
+
   const handlePayBill = async () => {
     if (!payingBill || accounts.length === 0) return;
     try {
@@ -250,6 +426,29 @@ export const Dashboard: React.FC = () => {
         </Card>
 
       </div>
+
+      {/* QUICK LOG CARD */}
+      <Card className="border border-primary/20 bg-primary/5 shadow-xs">
+        <CardContent className="p-4">
+          <form onSubmit={handleQuickAdd} className="flex flex-col md:flex-row gap-3 items-center">
+            <div className="flex items-center gap-1.5 text-primary shrink-0 select-none">
+              <Sparkles className="h-4.5 w-4.5" />
+              <span className="text-xs font-bold uppercase tracking-wider">Quick Log</span>
+            </div>
+            <input 
+              id="quick-expense-input"
+              type="text" 
+              placeholder='Type what you bought or earned (e.g. Starbucks 5 or Salary 2500)'
+              value={quickAddVal}
+              onChange={(e) => setQuickAddVal(e.target.value)}
+              className="flex-1 w-full bg-background border border-border/80 px-3 py-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <Button type="submit" size="sm" loading={quickAddLoading} className="w-full md:w-auto cursor-pointer">
+              Save Entry
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* DASHBOARD SPLIT GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

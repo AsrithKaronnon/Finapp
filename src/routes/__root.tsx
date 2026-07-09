@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabaseClient';
 import { Dialog } from '../components/ui/Dialog';
 import { Button } from '../components/ui/Button';
 import { ToastContainer } from '../components/ui/Toast';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { toast } from '../lib/useToastStore';
 
 export const RootLayout: React.FC = () => {
@@ -451,7 +452,9 @@ export const RootLayout: React.FC = () => {
 
         {/* SCROLLABLE MAIN OUTLET */}
         <main className="flex-1 overflow-y-auto bg-background/50 p-4 sm:p-6">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 
