@@ -36,6 +36,8 @@ export const HousePlanner: React.FC = () => {
     install_date: ''
   });
 
+  const [currencySymbol, setCurrencySymbol] = useState('$');
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -44,13 +46,15 @@ export const HousePlanner: React.FC = () => {
         { data: itemsData },
         { data: statData },
         { data: priData },
-        { data: typeData }
+        { data: typeData },
+        { data: settingsData }
       ] = await Promise.all([
         supabase.from('house_furnishing_rooms').select('*'),
         supabase.from('house_furnishing_items').select('*'),
         supabase.from('statuses').select('*'),
         supabase.from('priorities').select('*'),
-        supabase.from('furniture_types').select('*')
+        supabase.from('furniture_types').select('*'),
+        supabase.from('user_settings').select('base_currency_id, currencies(symbol)').maybeSingle()
       ]);
 
       if (roomsData) {
@@ -63,6 +67,13 @@ export const HousePlanner: React.FC = () => {
       if (statData) setStatuses(statData);
       if (priData) setPriorities(priData);
       if (typeData) setFurnitureTypes(typeData);
+
+      if (settingsData && settingsData.currencies) {
+        const sym = Array.isArray(settingsData.currencies)
+          ? settingsData.currencies[0]?.symbol
+          : (settingsData.currencies as any)?.symbol;
+        if (sym) setCurrencySymbol(sym);
+      }
     } catch (err) {
       console.error('Error fetching house planner dataset:', err);
     } finally {
@@ -305,9 +316,9 @@ export const HousePlanner: React.FC = () => {
                               </td>
                               <td className="p-3"><Badge variant="primary" className="text-[9px]">{furniture}</Badge></td>
                               <td className="p-3 text-muted-foreground font-medium">{item.vendor || '—'}</td>
-                              <td className="p-3 text-right font-mono">${item.estimated_cost.toLocaleString()}</td>
+                              <td className="p-3 text-right font-mono">{currencySymbol}{item.estimated_cost.toLocaleString()}</td>
                               <td className={`p-3 text-right font-mono font-bold ${isOver ? 'text-rose-500' : ''}`}>
-                                {item.actual_cost ? `$${item.actual_cost.toLocaleString()}` : 'Pending'}
+                                {item.actual_cost ? `${currencySymbol}${item.actual_cost.toLocaleString()}` : 'Pending'}
                               </td>
                               <td className="p-3 text-center">
                                 <Badge variant={item.status_id === SEED.statuses.completed ? 'success' : 'warning'} className="text-[9px]">
@@ -368,7 +379,7 @@ export const HousePlanner: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-muted-foreground">Estimated cost ($)</label>
+              <label className="text-xs font-semibold text-muted-foreground">Estimated cost ({currencySymbol})</label>
               <input
                 type="number"
                 required
@@ -378,7 +389,7 @@ export const HousePlanner: React.FC = () => {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-muted-foreground">Actual Spent ($)</label>
+              <label className="text-xs font-semibold text-muted-foreground">Actual Spent ({currencySymbol})</label>
               <input
                 type="number"
                 value={formData.actual_cost || ''}

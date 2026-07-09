@@ -29,19 +29,30 @@ export const Investments: React.FC = () => {
     monthly_contribution: 0
   });
 
+  const [currencySymbol, setCurrencySymbol] = useState('$');
+
   const fetchInvestments = async () => {
     setLoading(true);
     try {
       const [
         { data: invData },
-        { data: typesData }
+        { data: typesData },
+        { data: settingsData }
       ] = await Promise.all([
         supabase.from('investments').select('*'),
-        supabase.from('investment_types').select('*')
+        supabase.from('investment_types').select('*'),
+        supabase.from('user_settings').select('base_currency_id, currencies(symbol)').maybeSingle()
       ]);
 
       if (invData) setInvestments(invData);
       if (typesData) setInvestmentTypes(typesData);
+
+      if (settingsData && settingsData.currencies) {
+        const sym = Array.isArray(settingsData.currencies)
+          ? settingsData.currencies[0]?.symbol
+          : (settingsData.currencies as any)?.symbol;
+        if (sym) setCurrencySymbol(sym);
+      }
     } catch (err) {
       console.error('Error fetching investments portfolio:', err);
     } finally {
@@ -137,7 +148,7 @@ export const Investments: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Invested Principal</span>
-              <span className="text-xl font-bold text-foreground">${totalInvested.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span className="text-xl font-bold text-foreground">{currencySymbol}{totalInvested.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
             </div>
           </CardContent>
         </Card>
@@ -146,7 +157,7 @@ export const Investments: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Current Market Value</span>
-              <span className="text-xl font-bold text-foreground">${currentValuation.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span className="text-xl font-bold text-foreground">{currencySymbol}{currentValuation.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
             </div>
           </CardContent>
         </Card>
@@ -157,7 +168,7 @@ export const Investments: React.FC = () => {
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Absolute Returns (P&L)</span>
               <span className={`text-xl font-bold flex items-center gap-1 ${totalReturns >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {totalReturns >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
-                ${Math.abs(totalReturns).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {currencySymbol}{Math.abs(totalReturns).toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </span>
             </div>
           </CardContent>
@@ -249,11 +260,11 @@ export const Investments: React.FC = () => {
                           <tr key={inv.id} className="border-b border-border/30 hover:bg-muted/10">
                             <td className="p-3 pl-5 font-semibold text-foreground">{inv.name}</td>
                             <td className="p-3"><Badge variant="primary" className="text-[9px]">{type}</Badge></td>
-                            <td className="p-3 text-right font-mono font-medium">${inv.total_invested.toLocaleString()}</td>
-                            <td className="p-3 text-right font-mono font-bold">${inv.current_value.toLocaleString()}</td>
+                            <td className="p-3 text-right font-mono font-medium">{currencySymbol}{inv.total_invested.toLocaleString()}</td>
+                            <td className="p-3 text-right font-mono font-bold">{currencySymbol}{inv.current_value.toLocaleString()}</td>
                             <td className="p-3 text-right font-mono">
                               <span className={`font-semibold ${gain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                {gain >= 0 ? '+' : ''}${gain.toLocaleString()} ({gainPct.toFixed(1)}%)
+                                {gain >= 0 ? '+' : ''}{currencySymbol}{gain.toLocaleString()} ({gainPct.toFixed(1)}%)
                               </span>
                             </td>
                             <td className="p-3 text-center font-bold text-muted-foreground">{weight}%</td>
@@ -349,7 +360,7 @@ export const Investments: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-muted-foreground">Total Capital Invested ($)</label>
+              <label className="text-xs font-semibold text-muted-foreground">Total Capital Invested ({currencySymbol})</label>
               <input
                 type="number"
                 required
@@ -359,7 +370,7 @@ export const Investments: React.FC = () => {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-muted-foreground">Current Market Valuation ($)</label>
+              <label className="text-xs font-semibold text-muted-foreground">Current Market Valuation ({currencySymbol})</label>
               <input
                 type="number"
                 required
@@ -372,7 +383,7 @@ export const Investments: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-muted-foreground">Monthly Contribution ($)</label>
+              <label className="text-xs font-semibold text-muted-foreground">Monthly Contribution ({currencySymbol})</label>
               <input
                 type="number"
                 value={formData.monthly_contribution || ''}

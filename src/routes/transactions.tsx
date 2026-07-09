@@ -524,11 +524,11 @@ export const Transactions: React.FC = () => {
           <div className="w-full border-t border-b border-border/30 py-3 mt-4 space-y-2 text-[10px] font-mono">
             <div className="flex justify-between">
               <span>Item: Daily Groceries</span>
-              <span>$12.50</span>
+              <span>{currencySymbol}12.50</span>
             </div>
             <div className="flex justify-between border-t border-border/20 pt-2 font-bold text-foreground">
               <span>TOTAL</span>
-              <span>$12.50</span>
+              <span>{currencySymbol}12.50</span>
             </div>
           </div>
           <p className="text-[9px] text-muted-foreground text-center italic mt-2">

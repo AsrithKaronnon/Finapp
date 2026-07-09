@@ -16,6 +16,8 @@ export const CalendarView: React.FC = () => {
   const [goals, setGoals] = useState<any[]>([]);
   const [reminders, setReminders] = useState<any[]>([]);
   
+  const [currencySymbol, setCurrencySymbol] = useState('$');
+  
   // Active calendar date selection
   const [currentDate, setCurrentDate] = useState(new Date('2026-07-08')); // Match user metadata date anchor
   
@@ -30,16 +32,25 @@ export const CalendarView: React.FC = () => {
       const [
         { data: billsData },
         { data: loansData },
-        { data: goalsData }
+        { data: goalsData },
+        { data: settingsData }
       ] = await Promise.all([
         supabase.from('bills').select('*'),
         supabase.from('loans').select('*'),
-        supabase.from('goals').select('*')
+        supabase.from('goals').select('*'),
+        supabase.from('user_settings').select('base_currency_id, currencies(symbol)').maybeSingle()
       ]);
 
       if (billsData) setBills(billsData);
       if (loansData) setLoans(loansData);
       if (goalsData) setGoals(goalsData);
+      
+      if (settingsData && settingsData.currencies) {
+        const sym = Array.isArray(settingsData.currencies)
+          ? settingsData.currencies[0]?.symbol
+          : (settingsData.currencies as any)?.symbol;
+        if (sym) setCurrencySymbol(sym);
+      }
       
       // Load saved reminders from localStorage
       const savedReminders = JSON.parse(localStorage.getItem('financeos_calendar_reminders') || '[]');
@@ -133,28 +144,28 @@ export const CalendarView: React.FC = () => {
 
     // 1. Check for salary paycheck (hardcoded on 2nd of month matching transaction seed)
     if (dateStr.endsWith('-02')) {
-      events.push({ id: 'salary-1', type: 'salary', label: 'Salary Payday', details: 'Stripe tech bi-weekly paycheck: $5200' });
+      events.push({ id: 'salary-1', type: 'salary', label: 'Salary Payday', details: `Stripe tech bi-weekly paycheck: ${currencySymbol}5200` });
     }
 
     // 2. Matching bills
     bills.forEach(bill => {
       if (bill.due_date === dateStr) {
-        events.push({ id: bill.id, type: 'bill', label: bill.name, details: `Bill amount: $${bill.amount}` });
+        events.push({ id: bill.id, type: 'bill', label: bill.name, details: `Bill amount: ${currencySymbol}${bill.amount}` });
       }
     });
 
     // 3. Matching EMIs (seeded on 15th and 1st of month)
     if (dateStr.endsWith('-15')) {
-      events.push({ id: 'emi-tesla', type: 'emi', label: 'Tesla Model Y EMI', details: 'Monthly loan auto-debit: $845.50' });
+      events.push({ id: 'emi-tesla', type: 'emi', label: 'Tesla Model Y EMI', details: `Monthly loan auto-debit: ${currencySymbol}845.50` });
     }
     if (dateStr.endsWith('-01')) {
-      events.push({ id: 'emi-condo', type: 'emi', label: 'Condo Mortgage EMI', details: 'Monthly home mortgage auto-debit: $2143.00' });
+      events.push({ id: 'emi-condo', type: 'emi', label: 'Condo Mortgage EMI', details: `Monthly home mortgage auto-debit: ${currencySymbol}2143.00` });
     }
 
     // 4. Matching goal contributions (seeded due dates)
     goals.forEach(goal => {
       if (goal.due_date === dateStr) {
-        events.push({ id: goal.id, type: 'goal', label: `Goal Due: ${goal.name}`, details: `Target: $${goal.target_amount}` });
+        events.push({ id: goal.id, type: 'goal', label: `Goal Due: ${goal.name}`, details: `Target: ${currencySymbol}${goal.target_amount}` });
       }
     });
 

@@ -163,7 +163,7 @@ export const Bills: React.FC = () => {
           account_id: accounts[0].id,
           payment_method_id: SEED.payment_methods.bank_transfer,
           merchant: payingItem.name,
-          notes: `Paid Loan EMI: Outstanding Balance now $${newOutstanding}`,
+          notes: `Paid Loan EMI: Outstanding Balance now ${currencySymbol}${newOutstanding}`,
           tags: ['Essential', 'Debt'],
           is_recurring: true
         };
@@ -230,7 +230,7 @@ export const Bills: React.FC = () => {
         is_loan: true,
         outstanding_amount: l.outstanding_amount,
         remaining_emis: l.remaining_emis,
-        notes: `Outstanding: $${l.outstanding_amount.toLocaleString()} (${l.remaining_emis} left)`
+        notes: `Outstanding: ${currencySymbol}${l.outstanding_amount.toLocaleString()} (${l.remaining_emis} left)`
       });
     }
   });

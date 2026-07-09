@@ -174,24 +174,7 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const getCoachTip = () => {
-    if (transactions.length === 0) {
-      return "Welcome to your personal finance workspace! To begin building insights, log your first spend or incoming salary using the Quick Helpers or create a savings goal.";
-    }
-    
-    const remaining = monthlyIncome - monthlyExpense;
-    if (remaining < 0) {
-      return `Alert: Your spending (${currencySymbol}${monthlyExpense.toFixed(2)}) is exceeding your logged income (${currencySymbol}${monthlyIncome.toFixed(2)}) for this month by ${currencySymbol}${Math.abs(remaining).toFixed(2)}. Consider cutting down on non-essential subscriptions.`;
-    }
-    
-    const unpaidBills = bills.filter(b => b.status_id !== 's0000000-0000-0000-0000-000000000005' && b.is_active !== false);
-    if (unpaidBills.length > 0) {
-      const nextBill = unpaidBills[0];
-      return `Outstanding balance checklist: You have a positive surplus of ${currencySymbol}${remaining.toFixed(2)} this month. Consider paying off your upcoming "${nextBill.name}" bill of ${currencySymbol}${(parseFloat(nextBill.amount) || 0).toFixed(2)} due soon.`;
-    }
-    
-    return `Smart choice: You have saved ${currencySymbol}${remaining.toFixed(2)} this month! You are on a solid financial track with a savings rate of ${savingsRate}%. Try logging a new savings goal to invest your surplus cash.`;
-  };
+
 
   if (loading) {
     return (
@@ -299,26 +282,7 @@ export const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* AI Helper Coach */}
-          <Card className="border border-primary/20 bg-primary/5">
-            <CardContent className="p-5 flex gap-4 items-start select-none">
-              <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5 animate-pulse" />
-              <div className="flex-1 flex flex-col gap-1 text-xs">
-                <span className="font-bold text-foreground">My AI Money Coach Tips</span>
-                <p className="text-muted-foreground leading-relaxed">
-                  {getCoachTip()}
-                </p>
-                <div className="mt-2.5 flex gap-2">
-                  <Button onClick={() => navigate({ to: '/goals' })} size="sm" className="py-1 px-3 text-[10px] cursor-pointer">
-                    View Savings Goals
-                  </Button>
-                  <Button onClick={() => navigate({ to: '/money' })} size="sm" variant="outline" className="py-1 px-3 text-[10px] cursor-pointer">
-                    Log Spends
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
 
         </div>
 
@@ -364,10 +328,10 @@ export const Dashboard: React.FC = () => {
             <CardContent className="p-5 space-y-4">
               <div className="select-none">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                  <TrendingUp className="h-4.5 w-4.5 text-emerald-500" />
-                  Savings Goals
+                  <TrendingUp className="h-4.5 w-4.5 text-primary" />
+                  Savings Progress
                 </h3>
-                <p className="text-[11px] text-muted-foreground">Track progress toward your financial targets</p>
+                <p className="text-[11px] text-muted-foreground">Overall achievement of your savings targets</p>
               </div>
 
               {goals.length === 0 ? (
@@ -377,33 +341,34 @@ export const Dashboard: React.FC = () => {
                     Create Goal
                   </Button>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {goals.slice(0, 2).map((goal) => {
-                    const current = parseFloat(goal.current_amount) || 0;
-                    const target = parseFloat(goal.target_amount) || 1;
-                    const pct = Math.min(100, Math.round((current / target) * 100));
-                    
-                    return (
-                      <div key={goal.id} className="space-y-1.5">
-                        <div className="flex justify-between items-baseline text-xs font-bold text-foreground">
-                          <span className="truncate max-w-[120px]">{goal.name}</span>
-                          <span className="font-mono text-[10px] text-muted-foreground">
-                            {currencySymbol}{current.toLocaleString()} / {currencySymbol}{target.toLocaleString()}
-                          </span>
+              ) : (() => {
+                const totalCurrent = goals.reduce((sum, g) => sum + (parseFloat(g.current_amount) || 0), 0);
+                const totalTarget = goals.reduce((sum, g) => sum + (parseFloat(g.target_amount) || 0), 0) || 1;
+                const pct = Math.min(100, Math.round((totalCurrent / totalTarget) * 100));
+                
+                return (
+                  <div className="flex flex-col items-center justify-center py-2 gap-4">
+                    <div className="relative flex items-center justify-center">
+                      <ProgressCircle value={pct} size={100} strokeWidth={8}>
+                        <div className="text-center flex flex-col">
+                          <span className="text-xl font-bold text-foreground">{pct}%</span>
+                          <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider">Saved</span>
                         </div>
-                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                          <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${pct}%` }} />
-                        </div>
-                        <div className="flex justify-between text-[9px] text-muted-foreground">
-                          <span>{pct}% Completed</span>
-                          <span>Due: {goal.due_date}</span>
-                        </div>
+                      </ProgressCircle>
+                    </div>
+                    <div className="w-full text-center space-y-1">
+                      <div className="text-sm font-bold text-foreground">
+                        {currencySymbol}{totalCurrent.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                        <span className="text-xs text-muted-foreground font-normal"> saved of </span>
+                        {currencySymbol}{totalTarget.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                      <p className="text-[10px] text-muted-foreground">
+                        Across {goals.length} active savings {goals.length === 1 ? 'goal' : 'goals'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 

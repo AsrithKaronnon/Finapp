@@ -34,15 +34,19 @@ export const Loans: React.FC = () => {
   // EMI Payment State
   const [payingLoan, setPayingLoan] = useState<any | null>(null);
 
+  const [currencySymbol, setCurrencySymbol] = useState('$');
+
   const fetchLoans = async () => {
     setLoading(true);
     try {
       const [
         { data: loansData },
-        { data: typesData }
+        { data: typesData },
+        { data: settingsData }
       ] = await Promise.all([
         supabase.from('loans').select('*'),
-        supabase.from('loan_types').select('*')
+        supabase.from('loan_types').select('*'),
+        supabase.from('user_settings').select('base_currency_id, currencies(symbol)').maybeSingle()
       ]);
 
       if (loansData) {
@@ -52,6 +56,13 @@ export const Loans: React.FC = () => {
         }
       }
       if (typesData) setLoanTypes(typesData);
+
+      if (settingsData && settingsData.currencies) {
+        const sym = Array.isArray(settingsData.currencies)
+          ? settingsData.currencies[0]?.symbol
+          : (settingsData.currencies as any)?.symbol;
+        if (sym) setCurrencySymbol(sym);
+      }
     } catch (err) {
       console.error('Error fetching loan details:', err);
     } finally {
@@ -204,11 +215,11 @@ export const Loans: React.FC = () => {
       {/* TOP DEBT KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 select-none">
         
-        <Card>
-          <CardContent className="p-5 flex justify-between items-center">
+        <Card className="glow-primary">
+          <CardContent className="p-5 flex justify-between items-center bg-primary/5 border border-primary/20">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Outstanding Debt</span>
-              <span className="text-xl font-bold text-foreground">${totalOutstanding.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span className="text-xl font-bold text-foreground">{currencySymbol}{totalOutstanding.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
             </div>
             <div className="h-9 w-9 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500">
               <ShieldAlert className="h-5 w-5" />
@@ -219,8 +230,8 @@ export const Loans: React.FC = () => {
         <Card>
           <CardContent className="p-5 flex justify-between items-center">
             <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Combined Monthly EMI</span>
-              <span className="text-xl font-bold text-foreground">${totalMonthlyEMI.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Monthly EMI Dues</span>
+              <span className="text-xl font-bold text-foreground">{currencySymbol}{totalMonthlyEMI.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
             </div>
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
               <Percent className="h-5 w-5" />
@@ -282,9 +293,9 @@ export const Loans: React.FC = () => {
                     <CardTitle className="text-sm mt-1.5">{loan.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 pt-0 text-xs">
-                    <div className="flex justify-between items-center text-foreground font-semibold">
-                      <span>${loan.outstanding_amount.toLocaleString()} left</span>
-                      <span>EMI: ${loan.monthly_emi}</span>
+                    <div className="flex flex-col items-end text-xs font-bold text-foreground font-mono">
+                      <span>{currencySymbol}{loan.outstanding_amount.toLocaleString()} left</span>
+                      <span>EMI: {currencySymbol}{loan.monthly_emi}</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-1.5 mt-2 overflow-hidden">
                       <div className="bg-primary h-1.5 rounded-full" style={{ width: `${paidPct}%` }} />
@@ -344,11 +355,11 @@ export const Loans: React.FC = () => {
                       <tbody>
                         {scheduleData.map((row) => (
                           <tr key={row.month} className="border-b border-border/30 hover:bg-muted/10">
-                            <td className="p-3 pl-5 font-bold font-mono text-muted-foreground">#{row.month}</td>
-                            <td className="p-3 font-mono font-semibold">${row.emi.toFixed(2)}</td>
-                            <td className="p-3 text-emerald-500 font-mono">${row.principalPaid.toFixed(2)}</td>
-                            <td className="p-3 text-rose-500 font-mono">${row.interest.toFixed(2)}</td>
-                            <td className="p-3 font-mono font-semibold">${row.balance.toFixed(2)}</td>
+                            <td className="p-3 pl-5 text-muted-foreground font-bold">Month {row.month}</td>
+                            <td className="p-3 font-mono font-semibold">{currencySymbol}{row.emi.toFixed(2)}</td>
+                            <td className="p-3 text-emerald-500 font-mono">{currencySymbol}{row.principalPaid.toFixed(2)}</td>
+                            <td className="p-3 text-rose-500 font-mono">{currencySymbol}{row.interest.toFixed(2)}</td>
+                            <td className="p-3 font-mono font-semibold">{currencySymbol}{row.balance.toFixed(2)}</td>
                             <td className="p-3 pr-5 text-center">
                               <Badge variant={row.status === 'paid' ? 'success' : 'neutral'} className="text-[9px]">
                                 {row.status === 'paid' ? 'Paid' : 'Upcoming'}
@@ -388,7 +399,7 @@ export const Loans: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-muted-foreground">Total Principal Amount ($)</label>
+              <label className="text-xs font-semibold text-muted-foreground">Total Principal Amount ({currencySymbol})</label>
               <input
                 type="number"
                 required
@@ -452,7 +463,7 @@ export const Loans: React.FC = () => {
               <span className="font-bold text-foreground">Calculated Repayment Preview</span>
               <div className="flex justify-between text-muted-foreground mt-1">
                 <span>Estimated Monthly EMI:</span>
-                <span className="font-bold font-mono text-foreground">${formData.monthly_emi}</span>
+                <span className="font-bold font-mono text-foreground">{currencySymbol}{formData.monthly_emi}</span>
               </div>
             </div>
           )}
@@ -480,14 +491,14 @@ export const Loans: React.FC = () => {
             <div>
               <span className="font-bold">Posting Repayment Ledger</span>
               <p className="text-muted-foreground mt-0.5">
-                Continuing will log an expense of ${payingLoan?.monthly_emi} in your transactions, decrementing outstanding principal.
+                Continuing will log an expense of {currencySymbol}{payingLoan?.monthly_emi} in your transactions, decrementing outstanding principal.
               </p>
             </div>
           </div>
 
           <div className="flex justify-between items-center text-xs font-bold text-foreground border-b border-border/40 pb-3">
             <span>Monthly EMI Amount:</span>
-            <span className="font-mono text-lg">${payingLoan?.monthly_emi}</span>
+            <span className="font-mono text-lg">{currencySymbol}{payingLoan?.monthly_emi}</span>
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
