@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from '../lib/useToastStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
   Plus, Calendar, ShieldAlert, BookOpen, Percent, TrendingDown, ClipboardList, Sparkles 
@@ -148,8 +149,9 @@ export const Loans: React.FC = () => {
       if (error) throw error;
       setIsModalOpen(false);
       fetchLoans();
+      toast.success('Loan record saved successfully!');
     } catch (err) {
-      alert('Error entering loan details');
+      toast.error('Error entering loan details');
     }
   };
 
@@ -183,8 +185,9 @@ export const Loans: React.FC = () => {
 
       setPayingLoan(null);
       fetchLoans();
+      toast.success('EMI payment posted successfully!');
     } catch (err) {
-      alert('Error posting EMI payment');
+      toast.error('Error posting EMI payment');
     }
   };
 

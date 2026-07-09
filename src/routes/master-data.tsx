@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from '../lib/useToastStore';
 import { Plus, Trash2, Edit3, ShieldAlert, Sliders } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -128,8 +129,9 @@ export const MasterData: React.FC = () => {
       }
       setIsModalOpen(false);
       fetchItems();
+      toast.success('Record saved successfully!');
     } catch (err) {
-      alert('Error saving record');
+      toast.error('Error saving record');
     }
   };
 
@@ -141,8 +143,9 @@ export const MasterData: React.FC = () => {
         .eq('id', id);
       if (error) throw error;
       fetchItems();
+      toast.success('Status updated successfully');
     } catch (err) {
-      alert('Error updating active state');
+      toast.error('Error updating active state');
     }
   };
 
@@ -155,8 +158,9 @@ export const MasterData: React.FC = () => {
         .eq('id', id);
       if (error) throw error;
       fetchItems();
+      toast.success('Record deleted successfully');
     } catch (err) {
-      alert('Error deleting record');
+      toast.error('Error deleting record');
     }
   };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from '../lib/useToastStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
   Plus, Target, Calendar, Trash2, Sparkles 
@@ -94,8 +95,9 @@ export const Goals: React.FC = () => {
       await supabase.from('goals').insert([formData]);
       setIsModalOpen(false);
       fetchGoals();
+      toast.success('Goal saved successfully!');
     } catch (err) {
-      alert('Error saving goal');
+      toast.error('Error saving goal');
     }
   };
 
@@ -104,8 +106,9 @@ export const Goals: React.FC = () => {
     try {
       await supabase.from('goals').delete().eq('id', id);
       fetchGoals();
+      toast.success('Goal deleted successfully');
     } catch (err) {
-      alert('Error deleting goal');
+      toast.error('Error deleting goal');
     }
   };
 
@@ -137,8 +140,9 @@ export const Goals: React.FC = () => {
       setDepositGoal(null);
       setDepositAmount(0);
       fetchGoals();
+      toast.success('Contribution added successfully!');
     } catch (err) {
-      alert('Error processing contribution');
+      toast.error('Error processing contribution');
     }
   };
 

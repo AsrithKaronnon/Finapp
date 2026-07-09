@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from '../lib/useToastStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
   Plus, Hammer, CheckCircle2, Trash2, Pencil 
@@ -129,8 +130,9 @@ export const HousePlanner: React.FC = () => {
       }
       setIsItemModalOpen(false);
       fetchData();
+      toast.success('Furnishing checklist item saved!');
     } catch (err) {
-      alert('Error saving furnishing checklist item');
+      toast.error('Error saving furnishing checklist item');
     }
   };
 
@@ -139,8 +141,9 @@ export const HousePlanner: React.FC = () => {
     try {
       await supabase.from('house_furnishing_items').delete().eq('id', id);
       fetchData();
+      toast.success('Checklist item deleted');
     } catch (err) {
-      alert('Error deleting checklist item');
+      toast.error('Error deleting checklist item');
     }
   };
 

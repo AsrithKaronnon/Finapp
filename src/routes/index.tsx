@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from '../lib/useToastStore';
 import { SEED } from '../lib/supabaseMock';
 import { useNavigate } from '@tanstack/react-router';
 import { 
@@ -169,8 +170,9 @@ export const Dashboard: React.FC = () => {
 
       setPayingBill(null);
       fetchData();
+      toast.success('Payment recorded successfully');
     } catch (err) {
-      alert('Error updating payment');
+      toast.error('Error updating payment');
     }
   };
 

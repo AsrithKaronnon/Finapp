@@ -1,6 +1,13 @@
 import pg from 'pg';
 
-const connectionString = `postgresql://postgres.viefdnbijxsasfdjpusb:Zb1HvBIAj1b9XnXP@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres`;
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error('\x1b[31m%s\x1b[0m', 'ERROR: DATABASE_URL environment variable is missing.');
+  console.error('Please define DATABASE_URL in a local .env file and run the migration using:');
+  console.error('\x1b[36m%s\x1b[0m', '  node --env-file=.env migrate.js\n');
+  process.exit(1);
+}
 
 // Hardcoded seed IDs matching SEED values in supabaseMock.ts
 const SEED_DATA = {
@@ -224,6 +231,8 @@ async function main() {
         due_date DATE NOT NULL,
         status_id VARCHAR(50) REFERENCES statuses(id) ON DELETE SET NULL,
         recurrence_type_id VARCHAR(50) REFERENCES recurrence_types(id) ON DELETE SET NULL,
+        end_date DATE DEFAULT NULL,
+        is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW(),
         created_by UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),

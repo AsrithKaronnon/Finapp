@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from '../lib/useToastStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
   Plus, TrendingUp, TrendingDown, Landmark, PieChart as PieIcon, Percent, Trash2 
@@ -83,8 +84,9 @@ export const Investments: React.FC = () => {
       if (error) throw error;
       setIsModalOpen(false);
       fetchInvestments();
+      toast.success('Asset logged successfully!');
     } catch (err) {
-      alert('Error logging investment asset');
+      toast.error('Error logging investment asset');
     }
   };
 
@@ -93,8 +95,9 @@ export const Investments: React.FC = () => {
     try {
       await supabase.from('investments').delete().eq('id', id);
       fetchInvestments();
+      toast.success('Asset removed successfully');
     } catch (err) {
-      alert('Error deleting asset');
+      toast.error('Error deleting asset');
     }
   };
 

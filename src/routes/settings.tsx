@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { 
   Sun, Moon, Monitor, 
-  RefreshCw, ShieldCheck, Globe, User, ShieldAlert
+  RefreshCw, ShieldCheck, Globe, User, ShieldAlert, Sparkles
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -25,6 +25,9 @@ export const Settings: React.FC = () => {
   const [resetError, setResetError] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
 
+  const [geminiKey, setGeminiKey] = useState('');
+  const [geminiMsg, setGeminiMsg] = useState('');
+
   useEffect(() => {
     // Load initial settings theme
     const savedTheme = window.localStorage.getItem('theme') || 'system';
@@ -42,6 +45,10 @@ export const Settings: React.FC = () => {
       }
     });
 
+    // Fetch stored Gemini API Key
+    const storedKey = window.localStorage.getItem('gemini_api_key') || '';
+    setGeminiKey(storedKey);
+
     // Fetch logged-in user profile metadata
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
@@ -54,6 +61,13 @@ export const Settings: React.FC = () => {
       }
     });
   }, []);
+
+  const handleSaveGeminiKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    window.localStorage.setItem('gemini_api_key', geminiKey.trim());
+    setGeminiMsg('Gemini API Key updated successfully!');
+    setTimeout(() => setGeminiMsg(''), 3000);
+  };
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,6 +212,53 @@ export const Settings: React.FC = () => {
 
               <Button type="submit" loading={profileLoading} className="py-2 px-4 text-xs font-bold cursor-pointer">
                 Save Profile Details
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* AI Integrations Card */}
+        <Card className="border border-primary/20 bg-primary/5 bg-gradient-to-r from-primary/5 to-indigo-500/5">
+          <CardHeader className="pb-3 select-none">
+            <CardTitle className="text-sm flex items-center gap-1.5 text-primary">
+              <Sparkles className="h-4.5 w-4.5 text-primary animate-pulse" />
+              AI Helper Integrations
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground">
+              Provide your own free Google Gemini API key to enable intelligent, format-free NLP parsing in the Quick Log.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSaveGeminiKey} className="space-y-4">
+              {geminiMsg && (
+                <div className="p-3 rounded-lg border text-xs font-semibold bg-emerald-500/10 border-emerald-500/25 text-emerald-500 animate-none">
+                  {geminiMsg}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-muted-foreground select-none flex justify-between">
+                  <span>Gemini API Key</span>
+                  <a 
+                    href="https://aistudio.google.com/" 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="text-primary hover:underline font-bold"
+                  >
+                    Get Free API Key from Google AI Studio &rarr;
+                  </a>
+                </label>
+                <input
+                  type="password"
+                  value={geminiKey}
+                  onChange={(e) => setGeminiKey(e.target.value)}
+                  placeholder="Paste your AI Studio API key here (AIzaSy...)"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                />
+              </div>
+
+              <Button type="submit" className="py-2 px-4 text-xs font-bold cursor-pointer">
+                Save API Key
               </Button>
             </form>
           </CardContent>

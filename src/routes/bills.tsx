@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from '../lib/useToastStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
   Plus, AlertCircle, Trash2, Sparkles, Check 
@@ -28,7 +29,7 @@ export const Bills: React.FC = () => {
     name: '',
     amount: 0,
     due_date: new Date().toISOString().split('T')[0],
-    bill_type_id: SEED.bill_types.subscription,
+    bill_type_id: SEED.expense_categories.utilities,
     recurrence_type_id: SEED.recurrences.one_time,
     status_id: SEED.statuses.pending,
     end_date: '',
@@ -95,7 +96,7 @@ export const Bills: React.FC = () => {
       name: '',
       amount: 0,
       due_date: new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0], // 7 days out
-      bill_type_id: SEED.bill_types.subscription,
+      bill_type_id: billTypes[0]?.id || SEED.expense_categories.utilities,
       recurrence_type_id: SEED.recurrences.one_time,
       status_id: SEED.statuses.pending,
       end_date: '',
@@ -111,11 +112,17 @@ export const Bills: React.FC = () => {
         ...formData,
         end_date: formData.end_date || null
       };
-      await supabase.from('bills').insert([payload]);
+      const { error } = await supabase.from('bills').insert([payload]);
+      if (error) {
+        console.error('Supabase DB Insert Error:', error);
+        throw error;
+      }
       setIsModalOpen(false);
       fetchData();
-    } catch (err) {
-      alert('Error creating bill');
+      toast.success('Bill saved successfully!');
+    } catch (err: any) {
+      console.error('Error creating bill:', err);
+      toast.error(`Error creating bill: ${err.message || err}`);
     }
   };
 
@@ -130,15 +137,16 @@ export const Bills: React.FC = () => {
 
   const handleDelete = async (id: string, isLoan = false) => {
     if (isLoan) {
-      alert("Please manage active loans in your bank portal. Set local billing logs to delete them.");
+      toast.info("Please manage active loans in your bank portal. Set local billing logs to delete them.");
       return;
     }
     if (!confirm('Remove this payment log?')) return;
     try {
       await supabase.from('bills').delete().eq('id', id);
       fetchData();
+      toast.success('Bill deleted successfully');
     } catch (err) {
-      alert('Error deleting bill');
+      toast.error('Error deleting bill');
     }
   };
 
@@ -190,8 +198,9 @@ export const Bills: React.FC = () => {
 
       setPayingItem(null);
       fetchData();
+      toast.success('Payment recorded successfully');
     } catch (err) {
-      alert('Error updating payment status');
+      toast.error('Error updating payment status');
     }
   };
 

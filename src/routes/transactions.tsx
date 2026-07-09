@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from '../lib/useToastStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
-  Plus, Search, Trash2, Sparkles, Info, FileText 
+  Plus, Search, Trash2, Sparkles, Info, FileText, Pencil 
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -23,6 +24,7 @@ export const Transactions: React.FC = () => {
   
   // Quick Add State
   const [quickAddVal, setQuickAddVal] = useState('');
+  const [quickAddLoading, setQuickAddLoading] = useState(false);
   
   // Main Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,7 +42,10 @@ export const Transactions: React.FC = () => {
   });
 
   // Receipt Modal State
-  const [previewReceiptUrl, setPreviewReceiptUrl] = useState<string | null>(null);
+  const [selectedTxForReceipt, setSelectedTxForReceipt] = useState<any | null>(null);
+
+  // Edit Modal State
+  const [editingTxId, setEditingTxId] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -76,7 +81,17 @@ export const Transactions: React.FC = () => {
         if (sym) setCurrencySymbol(sym);
       }
 
-      if (txData) setTransactions(txData);
+      if (txData) {
+        const sorted = [...txData].sort((a, b) => {
+          const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+          if (dateDiff !== 0) return dateDiff;
+          
+          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return bTime - aTime;
+        });
+        setTransactions(sorted);
+      }
       if (accData) setAccounts(accData);
       if (expCatData) setExpenseCategories(expCatData);
       if (incCatData) setIncomeCategories(incCatData);
@@ -110,40 +125,137 @@ export const Transactions: React.FC = () => {
     return SEED.expense_categories.shopping;
   };
 
-  const handleQuickAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickAddVal.trim() || accounts.length === 0) return;
-
-    const parts = quickAddVal.trim().split(/\s+/);
+  const parseLocal = (val: string) => {
+    const parts = val.trim().split(/\s+/);
     let amount = 0;
     let amountIndex = -1;
 
     for (let i = parts.length - 1; i >= 0; i--) {
-      const val = parseFloat(parts[i]);
-      if (!isNaN(val)) {
-        amount = val;
+      const num = parseFloat(parts[i]);
+      if (!isNaN(num)) {
+        amount = num;
         amountIndex = i;
         break;
       }
     }
 
     if (amountIndex === -1 || amount <= 0) {
-      alert('Format incorrect. Type: [Merchant] [Amount] (e.g. Starbucks 5)');
-      return;
+      toast.error('Format incorrect. Type: [Merchant] [Amount] (e.g. Starbucks 5)');
+      return null;
     }
 
     const merchantParts = parts.slice(0, amountIndex);
     const merchant = merchantParts.join(' ') || 'General Entry';
-    
-    // Check if it's salary/income
     const isIncome = merchant.toLowerCase().includes('salary') || merchant.toLowerCase().includes('paycheck') || merchant.toLowerCase().includes('freelance');
-    const typeId = isIncome ? SEED.transaction_types.income : SEED.transaction_types.expense;
     const categoryId = isIncome ? SEED.income_categories.salary : autoCategorize(merchant);
+
+    return { amount, merchant, isIncome, categoryId };
+  };
+
+  const handleQuickAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickAddVal.trim() || accounts.length === 0) return;
+
+    const apiKey = window.localStorage.getItem('gemini_api_key');
+    
+    let amount = 0;
+    let merchant = 'General Entry';
+    let isIncome = false;
+    let categoryId = SEED.expense_categories.shopping;
+
+    if (apiKey) {
+      setQuickAddLoading(true);
+      try {
+        const prompt = `Parse this transaction into JSON. Return ONLY the JSON object.
+Categories: Food, Transport, Housing, Utilities, Entertainment, Shopping.
+Input: "${quickAddVal}"`;
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{ text: prompt }]
+              }],
+              generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                  type: "OBJECT",
+                  properties: {
+                    merchant: { type: "STRING" },
+                    amount: { type: "NUMBER" },
+                    is_income: { type: "BOOLEAN" },
+                    category: { type: "STRING", enum: ["Food", "Transport", "Housing", "Utilities", "Entertainment", "Shopping"] }
+                  },
+                  required: ["merchant", "amount", "is_income", "category"]
+                }
+              }
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('API request failed');
+        }
+
+        const data = await response.json();
+        const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!resultText) {
+          throw new Error('No text returned from Gemini');
+        }
+
+        const parsed = JSON.parse(resultText);
+        amount = parsed.amount || 0;
+        merchant = parsed.merchant || 'General Entry';
+        isIncome = !!parsed.is_income;
+
+        // Map category
+        if (isIncome) {
+          const mLower = merchant.toLowerCase();
+          if (mLower.includes('salary') || mLower.includes('paycheck')) {
+            categoryId = SEED.income_categories.salary;
+          } else if (mLower.includes('invest') || mLower.includes('stock') || mLower.includes('div')) {
+            categoryId = SEED.income_categories.investments;
+          } else {
+            categoryId = SEED.income_categories.freelance;
+          }
+        } else {
+          const cat = parsed.category;
+          if (cat === 'Food') categoryId = SEED.expense_categories.food;
+          else if (cat === 'Transport') categoryId = SEED.expense_categories.transport;
+          else if (cat === 'Housing') categoryId = SEED.expense_categories.housing;
+          else if (cat === 'Utilities') categoryId = SEED.expense_categories.utilities;
+          else if (cat === 'Entertainment') categoryId = SEED.expense_categories.entertainment;
+          else categoryId = SEED.expense_categories.shopping;
+        }
+      } catch (err) {
+        console.error('Gemini NLP parsing failed, falling back to local:', err);
+        const localParsed = parseLocal(quickAddVal);
+        if (!localParsed) return;
+        amount = localParsed.amount;
+        merchant = localParsed.merchant;
+        isIncome = localParsed.isIncome;
+        categoryId = localParsed.categoryId;
+      } finally {
+        setQuickAddLoading(false);
+      }
+    } else {
+      const localParsed = parseLocal(quickAddVal);
+      if (!localParsed) return;
+      amount = localParsed.amount;
+      merchant = localParsed.merchant;
+      isIncome = localParsed.isIncome;
+      categoryId = localParsed.categoryId;
+    }
 
     const newTx = {
       date: new Date().toISOString().split('T')[0],
       amount,
-      transaction_type_id: typeId,
+      transaction_type_id: isIncome ? SEED.transaction_types.income : SEED.transaction_types.expense,
       category_id: categoryId,
       account_id: accounts[0].id,
       payment_method_id: SEED.payment_methods.debit_card,
@@ -158,26 +270,41 @@ export const Transactions: React.FC = () => {
       if (error) throw error;
       setQuickAddVal('');
       fetchData();
+      toast.success('Quick entry saved successfully!');
     } catch (err) {
-      alert('Error entering spend');
+      toast.error('Error entering spend');
     }
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await supabase.from('transactions').insert([{
-        ...formData,
-        payment_method_id: SEED.payment_methods.debit_card
-      }]);
+      if (editingTxId) {
+        const { error } = await supabase
+          .from('transactions')
+          .update({
+            ...formData,
+            payment_method_id: SEED.payment_methods.debit_card
+          })
+          .eq('id', editingTxId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('transactions').insert([{
+          ...formData,
+          payment_method_id: SEED.payment_methods.debit_card
+        }]);
+        if (error) throw error;
+      }
       setIsModalOpen(false);
       fetchData();
+      toast.success(editingTxId ? 'Transaction updated successfully!' : 'Transaction saved successfully!');
     } catch (err) {
-      alert('Error logging entry');
+      toast.error(editingTxId ? 'Error updating transaction' : 'Error logging entry');
     }
   };
 
   const handleOpenAdd = () => {
+    setEditingTxId(null);
     setFormData({
       date: new Date().toISOString().split('T')[0],
       amount: 0,
@@ -193,13 +320,31 @@ export const Transactions: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const handleOpenEdit = (tx: any) => {
+    setEditingTxId(tx.id);
+    setFormData({
+      date: tx.date || new Date().toISOString().split('T')[0],
+      amount: parseFloat(tx.amount) || 0,
+      transaction_type_id: tx.transaction_type_id,
+      category_id: tx.category_id || '',
+      account_id: tx.account_id || '',
+      merchant: tx.merchant || '',
+      notes: tx.notes || '',
+      tags: Array.isArray(tx.tags) ? tx.tags : ['Essential'],
+      is_recurring: !!tx.is_recurring,
+      recurrence_interval: tx.recurrence_interval || 'monthly'
+    });
+    setIsModalOpen(true);
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('Remove this transaction record?')) return;
     try {
       await supabase.from('transactions').delete().eq('id', id);
       fetchData();
+      toast.success('Transaction deleted successfully');
     } catch (err) {
-      alert('Error deleting transaction');
+      toast.error('Error deleting transaction');
     }
   };
 
@@ -272,7 +417,7 @@ export const Transactions: React.FC = () => {
               onChange={(e) => setQuickAddVal(e.target.value)}
               className="flex-1 w-full bg-background border border-border/80 px-3 py-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/40"
             />
-            <Button type="submit" size="sm" className="w-full md:w-auto cursor-pointer">
+            <Button type="submit" size="sm" loading={quickAddLoading} className="w-full md:w-auto cursor-pointer">
               Save Entry
             </Button>
           </form>
@@ -350,15 +495,24 @@ export const Transactions: React.FC = () => {
                     <span className={`text-sm font-mono font-bold ${isIncome ? 'text-emerald-500' : 'text-foreground'}`}>
                       {isIncome ? '+' : '-'}{currencySymbol}{(parseFloat(tx.amount) || 0).toFixed(2)}
                     </span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 font-sans">
                       <button
-                        onClick={() => setPreviewReceiptUrl(tx.receipt_url || 'receipt_sample')}
+                        onClick={() => setSelectedTxForReceipt(tx)}
+                        title="View Receipt"
                         className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
                       >
                         <FileText className="h-4 w-4" />
                       </button>
                       <button
+                        onClick={() => handleOpenEdit(tx)}
+                        title="Edit Entry"
+                        className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(tx.id)}
+                        title="Delete Entry"
                         className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -376,7 +530,7 @@ export const Transactions: React.FC = () => {
       <Dialog
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Add Spend or Income"
+        title={editingTxId ? "Edit Transaction Record" : "Add Spend or Income"}
       >
         <form onSubmit={handleSave} className="flex flex-col gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -510,25 +664,27 @@ export const Transactions: React.FC = () => {
 
       {/* DUMMY RECEIPT DIALOG */}
       <Dialog
-        isOpen={!!previewReceiptUrl}
-        onClose={() => setPreviewReceiptUrl(null)}
+        isOpen={!!selectedTxForReceipt}
+        onClose={() => setSelectedTxForReceipt(null)}
         title="Receipt Image"
       >
         <div className="flex flex-col items-center justify-center p-6 border border-dashed border-border rounded-xl bg-card gap-4 select-none">
           <FileText className="h-12 w-12 text-primary animate-pulse" />
           <div className="flex flex-col items-center text-center">
             <span className="text-xs font-bold text-foreground">Digital Receipt Copy</span>
-            <span className="text-[10px] text-muted-foreground mt-1">Invoice ID: INV-2026-07089</span>
+            <span className="text-[10px] text-muted-foreground mt-1">
+              Invoice ID: INV-2026-{selectedTxForReceipt?.id ? selectedTxForReceipt.id.slice(0, 8).toUpperCase() : '07089'}
+            </span>
           </div>
 
           <div className="w-full border-t border-b border-border/30 py-3 mt-4 space-y-2 text-[10px] font-mono">
             <div className="flex justify-between">
-              <span>Item: Daily Groceries</span>
-              <span>{currencySymbol}12.50</span>
+              <span>Item: {selectedTxForReceipt?.merchant || 'General Entry'}</span>
+              <span>{currencySymbol}{(parseFloat(selectedTxForReceipt?.amount) || 0).toFixed(2)}</span>
             </div>
             <div className="flex justify-between border-t border-border/20 pt-2 font-bold text-foreground">
               <span>TOTAL</span>
-              <span>{currencySymbol}12.50</span>
+              <span>{currencySymbol}{(parseFloat(selectedTxForReceipt?.amount) || 0).toFixed(2)}</span>
             </div>
           </div>
           <p className="text-[9px] text-muted-foreground text-center italic mt-2">

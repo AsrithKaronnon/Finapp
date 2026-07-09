@@ -8,6 +8,8 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import { Dialog } from '../components/ui/Dialog';
 import { Button } from '../components/ui/Button';
+import { ToastContainer } from '../components/ui/Toast';
+import { toast } from '../lib/useToastStore';
 
 export const RootLayout: React.FC = () => {
   const [session, setSession] = useState<any>(null);
@@ -94,6 +96,9 @@ export const RootLayout: React.FC = () => {
 
     try {
       if (isSignUp) {
+        if (!authFirstName.trim() || !authLastName.trim() || !authPhone.trim() || !authEmail.trim() || !authPassword.trim()) {
+          throw new Error('All fields (First Name, Last Name, Mobile Number, Email Address, and Password) are mandatory.');
+        }
         const { error } = await supabase.auth.signUp({
           email: authEmail,
           password: authPassword,
@@ -106,13 +111,15 @@ export const RootLayout: React.FC = () => {
           }
         });
         if (error) throw error;
-        alert('Welcome! Your sandbox account is set up. Click Login.');
+        toast.success('Welcome! Your sandbox account is set up. Click Login.');
         setIsSignUp(false);
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: authEmail,
-          password: authPassword
-        });
+        const isPhone = /^[+\d\s\-()]+$/.test(authEmail.trim()) && !authEmail.includes('@');
+        const credentials = isPhone 
+          ? { phone: authEmail.trim(), password: authPassword }
+          : { email: authEmail.trim(), password: authPassword };
+
+        const { data, error } = await supabase.auth.signInWithPassword(credentials as any);
         if (error) throw error;
         setSession(data);
       }
@@ -233,13 +240,16 @@ export const RootLayout: React.FC = () => {
             )}
 
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-bold text-muted-foreground">Email Address</label>
+              <label className="text-[11px] font-bold text-muted-foreground">
+                {isSignUp ? 'Email Address' : 'Email Address or Mobile Number'}
+              </label>
               <input
-                type="email"
+                type={isSignUp ? 'email' : 'text'}
                 required
                 value={authEmail}
                 onChange={(e) => setAuthEmail(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 animate-none"
+                placeholder={isSignUp ? 'name@example.com' : 'email or phone number'}
               />
             </div>
 
@@ -543,6 +553,7 @@ export const RootLayout: React.FC = () => {
         </div>
       </Dialog>
 
+      <ToastContainer />
     </div>
   );
 };

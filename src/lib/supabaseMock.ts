@@ -720,8 +720,9 @@ const mockAuth = {
     localStorage.setItem('financeos_session', JSON.stringify(session));
     return { data: session, error: null };
   },
-  signInWithPassword: async ({ email }: { email: string }) => {
-    const session = { user: { id: 'mock-user-id', email, user_metadata: { first_name: 'John', last_name: 'Doe', phone: '+1 555-555-5555' } }, access_token: 'mock-auth-token-123' };
+  signInWithPassword: async ({ email, phone }: { email?: string; phone?: string }) => {
+    const ident = email || phone || 'user@example.com';
+    const session = { user: { id: 'mock-user-id', email: ident, user_metadata: { first_name: 'John', last_name: 'Doe', phone: phone || '+1 555-555-5555' } }, access_token: 'mock-auth-token-123' };
     const sessionStr = localStorage.getItem('financeos_session');
     const currentSession = sessionStr ? JSON.parse(sessionStr) : session;
     localStorage.setItem('financeos_session', JSON.stringify(currentSession));
