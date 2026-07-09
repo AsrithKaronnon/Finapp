@@ -33,9 +33,9 @@ export const Dashboard: React.FC = () => {
   const [quickAddLoading, setQuickAddLoading] = useState(false);
 
   // Customization Dashboard Layout States
-  const [activeWidgets, setActiveWidgets] = useState<string[]>(['standard', 'wealth', 'bills', 'daily', 'merchants']);
+  const [activeWidgets, setActiveWidgets] = useState<string[]>(['standard', 'wealth', 'goals', 'bills', 'daily', 'merchants']);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
-  const [tempWidgets, setTempWidgets] = useState<string[]>(['standard', 'wealth', 'bills', 'daily', 'merchants']);
+  const [tempWidgets, setTempWidgets] = useState<string[]>(['standard', 'wealth', 'goals', 'bills', 'daily', 'merchants']);
   const [saveLayoutLoading, setSaveLayoutLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -777,39 +777,57 @@ Input: "${quickAddVal}"`;
                     </div>
                   );
                 })()}
+              </CardContent>
+            </Card>
+          )}
 
-                <div className="border-t border-border/30 pt-4">
-                  <div className="select-none mb-3">
-                    <span className="text-[11px] font-bold text-muted-foreground">Savings Progress Gauge</span>
-                  </div>
-                  {goals.length === 0 ? (
-                    <div className="py-4 text-center border border-dashed border-border rounded-xl flex flex-col justify-center items-center gap-1.5 select-none">
-                      <span className="text-[10px] font-semibold text-muted-foreground">No active goals</span>
-                      <Button onClick={() => navigate({ to: '/goals' })} size="sm" className="py-0.5 px-2 text-[9px] cursor-pointer">
-                        Create Goal
-                      </Button>
-                    </div>
-                  ) : (() => {
-                    const totalCurrent = goals.reduce((sum, g) => sum + (parseFloat(g.current_amount) || 0), 0);
-                    const totalTarget = goals.reduce((sum, g) => sum + (parseFloat(g.target_amount) || 0), 0) || 1;
-                    const pct = Math.min(100, Math.round((totalCurrent / totalTarget) * 100));
-                    return (
-                      <div className="flex items-center gap-4">
-                        <ProgressCircle value={pct} size={50} strokeWidth={5}>
-                          <span className="text-[9px] font-bold text-foreground">{pct}%</span>
-                        </ProgressCircle>
-                        <div className="flex-1 flex flex-col min-w-0">
-                          <span className="text-xs font-bold text-foreground truncate">
-                            {currencySymbol}{totalCurrent.toLocaleString('en-US', { maximumFractionDigits: 0 })} of {currencySymbol}{totalTarget.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                          </span>
-                          <span className="text-[9px] text-muted-foreground mt-0.5 truncate">
-                            Saved across {goals.length} targets
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })()}
+          {/* Savings Goals progress card */}
+          {activeWidgets.includes('goals') && (
+            <Card className="order-1">
+              <CardContent className="p-5 space-y-4">
+                <div className="select-none">
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                    <TrendingUp className="h-4.5 w-4.5 text-primary" />
+                    Savings Progress
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">Overall achievement of your savings targets</p>
                 </div>
+
+                {goals.length === 0 ? (
+                  <div className="py-6 text-center border border-dashed border-border rounded-xl flex flex-col justify-center items-center gap-1.5 select-none">
+                    <span className="text-[10px] font-semibold text-muted-foreground">No active goals</span>
+                    <Button onClick={() => navigate({ to: '/goals' })} size="sm" className="py-0.5 px-2 text-[9px] cursor-pointer">
+                      Create Goal
+                    </Button>
+                  </div>
+                ) : (() => {
+                  const totalCurrent = goals.reduce((sum, g) => sum + (parseFloat(g.current_amount) || 0), 0);
+                  const totalTarget = goals.reduce((sum, g) => sum + (parseFloat(g.target_amount) || 0), 0) || 1;
+                  const pct = Math.min(100, Math.round((totalCurrent / totalTarget) * 100));
+                  
+                  return (
+                    <div className="flex flex-col items-center justify-center py-2 gap-4">
+                      <div className="relative flex items-center justify-center">
+                        <ProgressCircle value={pct} size={85} strokeWidth={7}>
+                          <div className="text-center flex flex-col">
+                            <span className="text-lg font-bold text-foreground">{pct}%</span>
+                            <span className="text-[8px] text-muted-foreground font-medium uppercase tracking-wider">Saved</span>
+                          </div>
+                        </ProgressCircle>
+                      </div>
+                      <div className="w-full text-center space-y-1 select-none">
+                        <div className="text-xs font-bold text-foreground">
+                          {currencySymbol}{totalCurrent.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                          <span className="text-[10px] text-muted-foreground font-normal"> saved of </span>
+                          {currencySymbol}{totalTarget.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                        </div>
+                        <p className="text-[9px] text-muted-foreground">
+                          Across {goals.length} active savings {goals.length === 1 ? 'goal' : 'goals'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           )}
@@ -960,7 +978,8 @@ Input: "${quickAddVal}"`;
               { id: 'spending', title: 'Spending Insights', desc: 'Category-wise spending distribution with progress bars.' },
               { id: 'daily', title: 'Daily Spend Velocity', desc: 'Analyze spent today compared to daily monthly average.' },
               { id: 'cashflow', title: 'Monthly Cash Flow', desc: 'Detailed summary of monthly income vs expenses.' },
-              { id: 'wealth', title: 'Savings & Net Worth', desc: 'Net worth totals (assets minus loans) and savings rate.' },
+              { id: 'wealth', title: 'Net Worth Statement', desc: 'Assets vs outstanding loan liabilities comparison.' },
+              { id: 'goals', title: 'Savings Progress', desc: 'Standalone progress indicator tracking active savings goals.' },
               { id: 'bills', title: 'Upcoming Bills Due', desc: 'List of next 3 due bills and repayment statuses.' },
               { id: 'merchants', title: 'Top Merchants Leaderboard', desc: 'Leaderboard of places you spent money most frequently.' }
             ].map((widget) => {
