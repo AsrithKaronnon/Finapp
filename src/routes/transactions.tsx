@@ -156,7 +156,7 @@ export const Transactions: React.FC = () => {
     e.preventDefault();
     if (!quickAddVal.trim() || accounts.length === 0) return;
 
-    const apiKey = window.localStorage.getItem('gemini_api_key');
+    const apiKey = window.localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY;
     
     let amount = 0;
     let merchant = 'General Entry';
@@ -470,16 +470,16 @@ Input: "${quickAddVal}"`;
               return (
                 <div 
                   key={tx.id} 
-                  className="flex justify-between items-center border-b border-border/35 p-3 last:border-0 hover:bg-muted/15 rounded-xl transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border/35 p-3 gap-2 last:border-0 hover:bg-muted/15 rounded-xl transition-colors"
                 >
                   {/* Left block description */}
-                  <div className="flex items-center gap-3">
-                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs select-none ${isIncome ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/10 text-primary'}`}>
+                  <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs select-none shrink-0 ${isIncome ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/10 text-primary'}`}>
                       {isIncome ? 'I' : 'S'}
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-foreground">{tx.merchant}</span>
-                      <span className="text-[10px] text-muted-foreground mt-0.5">
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-foreground truncate">{tx.merchant}</span>
+                      <span className="text-[10px] text-muted-foreground mt-0.5 truncate">
                         {tx.date} • {catName}
                         {tx.is_recurring && (
                           <span className="ml-1.5 text-primary bg-primary/10 px-1 py-0.2 rounded text-[8px] font-extrabold uppercase">
@@ -491,7 +491,7 @@ Input: "${quickAddVal}"`;
                   </div>
 
                   {/* Right block amount & actions */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto border-t border-border/10 sm:border-none pt-2 sm:pt-0 shrink-0">
                     <span className={`text-sm font-mono font-bold ${isIncome ? 'text-emerald-500' : 'text-foreground'}`}>
                       {isIncome ? '+' : '-'}{currencySymbol}{(parseFloat(tx.amount) || 0).toFixed(2)}
                     </span>

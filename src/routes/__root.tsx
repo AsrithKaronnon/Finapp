@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useRouterState, useNavigate } from '@tanstack/react-router';
 import { 
   Home, Wallet, Target, Receipt, Settings, 
-  Search, Bell, ChevronLeft, ChevronRight, LogOut, Sun, Moon, 
+  Bell, ChevronLeft, ChevronRight, LogOut, Sun, Moon, 
   Monitor, AlertCircle, Plus
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
@@ -19,8 +19,6 @@ export const RootLayout: React.FC = () => {
     return (window.localStorage.getItem('theme') as any) || 'system';
   });
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [commandQuery, setCommandQuery] = useState('');
   
   // Auth Form State
   const [isSignUp, setIsSignUp] = useState(false);
@@ -77,17 +75,7 @@ export const RootLayout: React.FC = () => {
     }
   }, [session, isNotificationOpen]);
 
-  // Command Palette listener
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,10 +132,7 @@ export const RootLayout: React.FC = () => {
     { label: 'Settings', path: '/settings', icon: Settings, keywords: 'theme currencies reset local storage' },
   ];
 
-  const filteredCommands = navigationItems.filter(item => 
-    item.label.toLowerCase().includes(commandQuery.toLowerCase()) ||
-    item.keywords.toLowerCase().includes(commandQuery.toLowerCase())
-  );
+
 
   const getGreeting = () => {
     const hrs = new Date().getHours();
@@ -451,14 +436,6 @@ export const RootLayout: React.FC = () => {
 
           {/* Right Header items */}
           <div className="flex items-center gap-3">
-            {/* Search Gateway */}
-            <button
-              onClick={() => setIsCommandPaletteOpen(true)}
-              className="p-2 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-
             {/* Notification bell */}
             <button
               onClick={() => setIsNotificationOpen(true)}
@@ -506,50 +483,6 @@ export const RootLayout: React.FC = () => {
               </div>
             ))
           )}
-        </div>
-      </Dialog>
-
-      {/* SEARCH COMMAND DIALOG */}
-      <Dialog 
-        isOpen={isCommandPaletteOpen} 
-        onClose={() => {
-          setIsCommandPaletteOpen(false);
-          setCommandQuery('');
-        }}
-        title="Find Pages & Actions"
-      >
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 border border-border rounded-xl px-3 py-2 bg-background">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <input 
-              autoFocus
-              type="text" 
-              placeholder="Search..." 
-              value={commandQuery}
-              onChange={(e) => setCommandQuery(e.target.value)}
-              className="text-xs text-foreground bg-transparent border-none outline-none flex-1 focus:ring-0"
-            />
-          </div>
-
-          <div className="space-y-1">
-            {filteredCommands.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.path}
-                  onClick={() => {
-                    setIsCommandPaletteOpen(false);
-                    setCommandQuery('');
-                    navigate({ to: item.path });
-                  }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs text-left hover:bg-muted text-foreground cursor-pointer"
-                >
-                  <Icon className="h-4.5 w-4.5 text-muted-foreground" />
-                  <span>Go to {item.label}</span>
-                </button>
-              );
-            })}
-          </div>
         </div>
       </Dialog>
 

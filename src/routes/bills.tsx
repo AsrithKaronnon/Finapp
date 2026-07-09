@@ -302,20 +302,22 @@ export const Bills: React.FC = () => {
 
             return (
               <Card key={p.id} className="hoverEffect select-none">
-                <CardContent className="p-4 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center text-foreground font-bold text-xs ${p.is_loan ? 'bg-rose-500/10 text-rose-500' : 'bg-primary/10 text-primary'}`}>
+                <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none">
+                  {/* Left block description */}
+                  <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center text-foreground font-bold text-xs shrink-0 ${p.is_loan ? 'bg-rose-500/10 text-rose-500' : 'bg-primary/10 text-primary'}`}>
                       {p.is_loan ? 'L' : 'B'}
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-foreground">{p.name}</span>
-                      <span className="text-[10px] text-muted-foreground mt-0.5">
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-foreground truncate">{p.name}</span>
+                      <span className="text-[10px] text-muted-foreground mt-0.5 truncate">
                         Due: {p.due_date} • {p.notes}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  {/* Right block details & actions */}
+                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t border-border/10 sm:border-none pt-2 sm:pt-0 shrink-0">
                     {!p.is_loan && (
                       <button
                         onClick={() => handleToggleActive(p.id, p.is_active)}
@@ -335,20 +337,20 @@ export const Bills: React.FC = () => {
                       <Button
                         onClick={() => setPayingItem(p)}
                         size="sm"
-                        className="py-1 px-3 text-[10px] cursor-pointer flex items-center gap-1"
+                        className="py-1 px-3 text-[10px] cursor-pointer flex items-center gap-1 shrink-0"
                       >
                         <Check className="h-3 w-3" />
                         Pay
                       </Button>
                     ) : (
-                      <Badge variant="success" className="text-emerald-500 bg-emerald-500/5 border-emerald-500/20 text-[9px] px-2 py-0.5">
+                      <Badge variant="success" className="text-emerald-500 bg-emerald-500/5 border-emerald-500/20 text-[9px] px-2 py-0.5 shrink-0">
                         Paid
                       </Badge>
                     )}
                     {!p.is_loan && (
                       <button
                         onClick={() => handleDelete(p.id, p.is_loan)}
-                        className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
+                        className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer transition-colors shrink-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

@@ -289,10 +289,10 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Right Side: Next payments & quick launch actions */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className="lg:col-span-1 flex flex-col gap-6">
           
           {/* Upcoming Payments list */}
-          <Card>
+          <Card className="order-2 lg:order-1">
             <CardContent className="p-5 space-y-4">
               <div className="select-none">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
@@ -326,7 +326,7 @@ export const Dashboard: React.FC = () => {
           </Card>
 
           {/* Savings Goals progress card */}
-          <Card>
+          <Card className="order-1 lg:order-2">
             <CardContent className="p-5 space-y-4">
               <div className="select-none">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
@@ -375,7 +375,7 @@ export const Dashboard: React.FC = () => {
           </Card>
 
           {/* Quick launch guide */}
-          <Card>
+          <Card className="order-3 lg:order-3">
             <CardContent className="p-5 flex flex-col gap-2.5">
               <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider select-none">
                 Quick Helpers
