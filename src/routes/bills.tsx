@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { toast } from '../lib/useToastStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
-  Plus, AlertCircle, Trash2, Sparkles, Check 
+  Plus, AlertCircle, Trash2, Sparkles, Check, Edit
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -25,6 +25,7 @@ export const Bills: React.FC = () => {
 
   // Add / Edit Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     amount: 0,
@@ -92,6 +93,7 @@ export const Bills: React.FC = () => {
   }, []);
 
   const handleOpenAdd = () => {
+    setEditingId(null);
     setFormData({
       name: '',
       amount: 0,
@@ -105,6 +107,21 @@ export const Bills: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const handleEdit = (bill: any) => {
+    setEditingId(bill.id);
+    setFormData({
+      name: bill.name || '',
+      amount: parseFloat(bill.amount) || 0,
+      due_date: bill.due_date || new Date().toISOString().split('T')[0],
+      bill_type_id: bill.bill_type_id || SEED.expense_categories.utilities,
+      recurrence_type_id: bill.recurrence_type_id || SEED.recurrences.one_time,
+      status_id: bill.status_id || SEED.statuses.pending,
+      end_date: bill.end_date || '',
+      is_active: bill.is_active !== false
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -112,17 +129,21 @@ export const Bills: React.FC = () => {
         ...formData,
         end_date: formData.end_date || null
       };
-      const { error } = await supabase.from('bills').insert([payload]);
-      if (error) {
-        console.error('Supabase DB Insert Error:', error);
-        throw error;
+      if (editingId) {
+        const { error } = await supabase.from('bills').update(payload).eq('id', editingId);
+        if (error) throw error;
+        toast.success('Bill updated successfully!');
+      } else {
+        const { error } = await supabase.from('bills').insert([payload]);
+        if (error) throw error;
+        toast.success('Bill saved successfully!');
       }
       setIsModalOpen(false);
+      setEditingId(null);
       fetchData();
-      toast.success('Bill saved successfully!');
     } catch (err: any) {
-      console.error('Error creating bill:', err);
-      toast.error(`Error creating bill: ${err.message || err}`);
+      console.error('Error saving bill:', err);
+      toast.error(`Error saving bill: ${err.message || err}`);
     }
   };
 
@@ -178,7 +199,12 @@ export const Bills: React.FC = () => {
         await supabase.from('transactions').insert([newTx]);
       } else {
         // Regular Bill: Update bill status to paid
-        await supabase.from('bills').update({ status_id: SEED.statuses.paid }).eq('id', payingItem.id);
+        // If not recurring, mark inactive
+        const updates: any = { status_id: SEED.statuses.paid };
+        if (payingItem.recurrence_type_id === SEED.recurrences.one_time) {
+          updates.is_active = false;
+        }
+        await supabase.from('bills').update(updates).eq('id', payingItem.id);
 
         // Record a transaction
         const newTx = {
@@ -348,12 +374,22 @@ export const Bills: React.FC = () => {
                       </Badge>
                     )}
                     {!p.is_loan && (
-                      <button
-                        onClick={() => handleDelete(p.id, p.is_loan)}
-                        className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer transition-colors shrink-0"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => handleEdit(p)}
+                          className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                          title="Edit bill log"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p.id, p.is_loan)}
+                          className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
+                          title="Delete bill log"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </CardContent>
@@ -366,8 +402,11 @@ export const Bills: React.FC = () => {
       {/* CREATE BILL DIALOG */}
       <Dialog
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Add a Bill Log"
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingId(null);
+        }}
+        title={editingId ? "Edit Bill Log" : "Add a Bill Log"}
       >
         <form onSubmit={handleSave} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">

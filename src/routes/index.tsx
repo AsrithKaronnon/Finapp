@@ -346,7 +346,12 @@ Input: "${quickAddVal}"`;
     if (!payingBill || accounts.length === 0) return;
     try {
       // 1. Update bill status to paid
-      await supabase.from('bills').update({ status_id: SEED.statuses.paid }).eq('id', payingBill.id);
+      // If not recurring, mark inactive
+      const updates: any = { status_id: SEED.statuses.paid };
+      if (payingBill.recurrence_type_id === SEED.recurrences.one_time) {
+        updates.is_active = false;
+      }
+      await supabase.from('bills').update(updates).eq('id', payingBill.id);
 
       // 2. Log standard transaction record matching it
       const newTx = {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { 
   Sun, Moon, Monitor, 
-  RefreshCw, ShieldCheck, Globe, User, ShieldAlert, KeyRound, LogOut
+  RefreshCw, ShieldCheck, Globe, User, ShieldAlert, KeyRound, LogOut, ChevronDown
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -31,6 +31,9 @@ export const Settings: React.FC = () => {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState('');
+
+  // Collapsible Accordion State
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   useEffect(() => {
     // Load initial settings theme
@@ -203,219 +206,269 @@ export const Settings: React.FC = () => {
       <div className="max-w-2xl space-y-6">
 
         {/* Profile Settings Card */}
-        <Card>
-          <CardHeader className="pb-3 select-none">
-            <CardTitle className="text-sm flex items-center gap-1.5">
-              <User className="h-4.5 w-4.5 text-primary" />
-              Profile Settings
-            </CardTitle>
-            <CardDescription className="text-xs">Update your personal contact details and names</CardDescription>
+        <Card className="overflow-hidden">
+          <CardHeader 
+            onClick={() => setActiveSection(activeSection === 'profile' ? null : 'profile')} 
+            className="pb-3 select-none cursor-pointer hover:bg-muted/10 transition-colors flex flex-row items-center justify-between"
+          >
+            <div>
+              <CardTitle className="text-sm flex items-center gap-1.5">
+                <User className="h-4.5 w-4.5 text-primary" />
+                Profile Settings
+              </CardTitle>
+              <CardDescription className="text-xs">Update your personal contact details and names</CardDescription>
+            </div>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+              activeSection === 'profile' ? 'transform rotate-180' : ''
+            }`} />
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleProfileUpdate} className="space-y-4">
-              {profileMsg && (
-                <div className={`p-3 rounded-lg border text-xs font-semibold ${
-                  profileMsg.startsWith('Error') 
-                    ? 'bg-destructive/10 border-destructive/25 text-destructive' 
-                    : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-500'
-                }`}>
-                  {profileMsg}
-                </div>
-              )}
+          {activeSection === 'profile' && (
+            <CardContent>
+              <form onSubmit={handleProfileUpdate} className="space-y-4">
+                {profileMsg && (
+                  <div className={`p-3 rounded-lg border text-xs font-semibold ${
+                    profileMsg.startsWith('Error') 
+                      ? 'bg-destructive/10 border-destructive/25 text-destructive' 
+                      : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-500'
+                  }`}>
+                    {profileMsg}
+                  </div>
+                )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-muted-foreground">First Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-muted-foreground">Last Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                    />
+                  </div>
+                </div>
+
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-muted-foreground">First Name</label>
+                  <label className="text-[11px] font-bold text-muted-foreground">Mobile Number</label>
                   <input
-                    type="text"
+                    type="tel"
                     required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-muted-foreground">Last Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
-                  />
-                </div>
-              </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-muted-foreground">Mobile Number</label>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
-                />
-              </div>
-
-              <Button type="submit" loading={profileLoading} className="py-2 px-4 text-xs font-bold cursor-pointer">
-                Save Profile Details
-              </Button>
-            </form>
-          </CardContent>
+                <Button type="submit" loading={profileLoading} className="py-2 px-4 text-xs font-bold cursor-pointer">
+                  Save Profile Details
+                </Button>
+              </form>
+            </CardContent>
+          )}
         </Card>
 
         {/* Change Password Card */}
-        <Card>
-          <CardHeader className="pb-3 select-none">
-            <CardTitle className="text-sm flex items-center gap-1.5">
-              <KeyRound className="h-4.5 w-4.5 text-primary" />
-              Change Password
-            </CardTitle>
-            <CardDescription className="text-xs">Update your security password for credentials authentication</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handlePasswordUpdate} className="space-y-4">
-              {passwordMsg && (
-                <div className={`p-3 rounded-lg border text-xs font-semibold ${
-                  passwordMsg.startsWith('Error') 
-                    ? 'bg-destructive/10 border-destructive/25 text-destructive' 
-                    : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-500'
-                }`}>
-                  {passwordMsg}
-                </div>
-              )}
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-muted-foreground">Previous Password</label>
-                <input
-                  type="password"
-                  required
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
-                  placeholder="Enter previous password"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-muted-foreground">New Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
-                    placeholder="Min 6 characters"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-muted-foreground">Confirm New Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
-                    placeholder="Repeat new password"
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" loading={passwordLoading} className="py-2 px-4 text-xs font-bold cursor-pointer">
+        <Card className="overflow-hidden">
+          <CardHeader 
+            onClick={() => setActiveSection(activeSection === 'password' ? null : 'password')} 
+            className="pb-3 select-none cursor-pointer hover:bg-muted/10 transition-colors flex flex-row items-center justify-between"
+          >
+            <div>
+              <CardTitle className="text-sm flex items-center gap-1.5">
+                <KeyRound className="h-4.5 w-4.5 text-primary" />
                 Change Password
-              </Button>
-            </form>
-          </CardContent>
+              </CardTitle>
+              <CardDescription className="text-xs">Update your security password for credentials authentication</CardDescription>
+            </div>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+              activeSection === 'password' ? 'transform rotate-180' : ''
+            }`} />
+          </CardHeader>
+          {activeSection === 'password' && (
+            <CardContent>
+              <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                {passwordMsg && (
+                  <div className={`p-3 rounded-lg border text-xs font-semibold ${
+                    passwordMsg.startsWith('Error') 
+                      ? 'bg-destructive/10 border-destructive/25 text-destructive' 
+                      : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-500'
+                  }`}>
+                    {passwordMsg}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-muted-foreground">Previous Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                    placeholder="Enter previous password"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-muted-foreground">New Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                      placeholder="Min 6 characters"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-muted-foreground">Confirm New Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                      placeholder="Repeat new password"
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" loading={passwordLoading} className="py-2 px-4 text-xs font-bold cursor-pointer">
+                  Change Password
+                </Button>
+              </form>
+            </CardContent>
+          )}
         </Card>
         
         {/* Color Theme Preference */}
-        <Card>
-          <CardHeader className="pb-3 select-none">
-            <CardTitle className="text-sm flex items-center gap-1.5">
-              <Sun className="h-4.5 w-4.5 text-primary" />
-              Theme Preference
-            </CardTitle>
-            <CardDescription className="text-xs">Select how you want the application to look</CardDescription>
+        <Card className="overflow-hidden">
+          <CardHeader 
+            onClick={() => setActiveSection(activeSection === 'theme' ? null : 'theme')} 
+            className="pb-3 select-none cursor-pointer hover:bg-muted/10 transition-colors flex flex-row items-center justify-between"
+          >
+            <div>
+              <CardTitle className="text-sm flex items-center gap-1.5">
+                <Sun className="h-4.5 w-4.5 text-primary" />
+                Theme Preference
+              </CardTitle>
+              <CardDescription className="text-xs">Select how you want the application to look</CardDescription>
+            </div>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+              activeSection === 'theme' ? 'transform rotate-180' : ''
+            }`} />
           </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row gap-3">
-            {[
-              { id: 'light', label: 'Light Mode', icon: Sun },
-              { id: 'dark', label: 'Dark Mode', icon: Moon },
-              { id: 'system', label: 'System Default', icon: Monitor }
-            ].map((item) => {
-              const Icon = item.icon;
-              const isSelected = theme === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleThemeChange(item.id as any)}
-                  className={`
-                    flex-1 py-3 px-4 rounded-xl border flex items-center justify-between font-bold text-xs select-none transition-all cursor-pointer
-                    ${isSelected 
-                      ? 'border-primary bg-primary/5 text-primary shadow-xs' 
-                      : 'border-border bg-card text-muted-foreground hover:text-foreground'
-                    }
-                  `}
-                >
-                  <span className="flex items-center gap-2">
-                    <Icon className="h-4.5 w-4.5" />
-                    {item.label}
-                  </span>
-                  {isSelected && <ShieldCheck className="h-4.5 w-4.5 text-primary" />}
-                </button>
-              );
-            })}
-          </CardContent>
+          {activeSection === 'theme' && (
+            <CardContent className="flex flex-col sm:flex-row gap-3">
+              {[
+                { id: 'light', label: 'Light Mode', icon: Sun },
+                { id: 'dark', label: 'Dark Mode', icon: Moon },
+                { id: 'system', label: 'System Default', icon: Monitor }
+              ].map((item) => {
+                const Icon = item.icon;
+                const isSelected = theme === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleThemeChange(item.id as any)}
+                    className={`
+                      flex-1 py-3 px-4 rounded-xl border flex items-center justify-between font-bold text-xs select-none transition-all cursor-pointer
+                      ${isSelected 
+                        ? 'border-primary bg-primary/5 text-primary shadow-xs' 
+                        : 'border-border bg-card text-muted-foreground hover:text-foreground'
+                      }
+                    `}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Icon className="h-4.5 w-4.5" />
+                      {item.label}
+                    </span>
+                    {isSelected && <ShieldCheck className="h-4.5 w-4.5 text-primary" />}
+                  </button>
+                );
+              })}
+            </CardContent>
+          )}
         </Card>
 
         {/* Currency Card */}
-        <Card>
-          <CardHeader className="pb-3 select-none">
-            <CardTitle className="text-sm flex items-center gap-1.5">
-              <Globe className="h-4.5 w-4.5 text-primary" />
-              Currency Settings
-            </CardTitle>
-            <CardDescription className="text-xs">Adjust the default monetary symbols used in dashboards</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-bold text-muted-foreground select-none">Base Currency</label>
-              <select
-                value={currency}
-                onChange={(e) => handleCurrencyChange(e.target.value)}
-                className="w-full max-w-xs px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
-              >
-                {currencies.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.symbol})
-                  </option>
-                ))}
-              </select>
+        <Card className="overflow-hidden">
+          <CardHeader 
+            onClick={() => setActiveSection(activeSection === 'currency' ? null : 'currency')} 
+            className="pb-3 select-none cursor-pointer hover:bg-muted/10 transition-colors flex flex-row items-center justify-between"
+          >
+            <div>
+              <CardTitle className="text-sm flex items-center gap-1.5">
+                <Globe className="h-4.5 w-4.5 text-primary" />
+                Currency Settings
+              </CardTitle>
+              <CardDescription className="text-xs">Adjust the default monetary symbols used in dashboards</CardDescription>
             </div>
-          </CardContent>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+              activeSection === 'currency' ? 'transform rotate-180' : ''
+            }`} />
+          </CardHeader>
+          {activeSection === 'currency' && (
+            <CardContent>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-muted-foreground select-none">Base Currency</label>
+                <select
+                  value={currency}
+                  onChange={(e) => handleCurrencyChange(e.target.value)}
+                  className="w-full max-w-xs px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/45"
+                >
+                  {currencies.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.symbol})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         {/* Database resets */}
-        <Card className="border-destructive/20 bg-destructive/5">
-          <CardHeader className="pb-3 select-none">
-            <CardTitle className="text-sm text-destructive flex items-center gap-1.5">
-              <RefreshCw className="h-4.5 w-4.5 text-destructive" />
-              Reset Helper
-            </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground/80">Wipes local modifications and reinstates standard demo logs</CardDescription>
+        <Card className="overflow-hidden border-destructive/20 bg-destructive/5">
+          <CardHeader 
+            onClick={() => setActiveSection(activeSection === 'reset' ? null : 'reset')} 
+            className="pb-3 select-none cursor-pointer hover:bg-destructive/10 transition-colors flex flex-row items-center justify-between"
+          >
+            <div>
+              <CardTitle className="text-sm text-destructive flex items-center gap-1.5">
+                <RefreshCw className="h-4.5 w-4.5 text-destructive" />
+                Reset Helper
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground/80">Wipes local modifications and reinstates standard demo logs</CardDescription>
+            </div>
+            <ChevronDown className={`h-4 w-4 text-destructive/80 transition-transform duration-200 ${
+              activeSection === 'reset' ? 'transform rotate-180' : ''
+            }`} />
           </CardHeader>
-          <CardContent>
-            <Button
-              onClick={triggerResetOpen}
-              variant="danger"
-              size="sm"
-              className="text-xs py-2 cursor-pointer flex items-center gap-1.5"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Reset My Data
-            </Button>
-          </CardContent>
+          {activeSection === 'reset' && (
+            <CardContent>
+              <Button
+                onClick={triggerResetOpen}
+                variant="danger"
+                size="sm"
+                className="text-xs py-2 cursor-pointer flex items-center gap-1.5"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Reset My Data
+              </Button>
+            </CardContent>
+          )}
         </Card>
 
         {/* Log Out card for mobile screens */}
