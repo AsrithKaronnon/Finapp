@@ -149,6 +149,14 @@ export const RootLayout: React.FC = () => {
     return 'Good evening';
   };
 
+  const getUserDisplayName = () => {
+    const meta = session?.user?.user_metadata;
+    if (meta && (meta.first_name || meta.last_name)) {
+      return `${meta.first_name || ''} ${meta.last_name || ''}`.trim();
+    }
+    return session?.user?.email?.split('@')[0] || 'User';
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
@@ -427,7 +435,7 @@ export const RootLayout: React.FC = () => {
           {/* Greeting message */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-foreground">
-              {getGreeting()}, {session.user.email.split('@')[0]}!
+              {getGreeting()}, {getUserDisplayName()}!
             </span>
           </div>
 

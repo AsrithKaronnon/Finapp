@@ -1,10 +1,12 @@
-import { createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
+import { createRootRoute, createRoute, createRouter, createHashHistory } from '@tanstack/react-router';
 import { RootLayout } from './__root';
 import { Dashboard } from './index';
 import { Transactions } from './transactions';
 import { Goals } from './goals';
 import { Bills } from './bills';
 import { Settings } from './settings';
+
+const hashHistory = createHashHistory();
 
 // Create Root Route
 export const rootRoute = createRootRoute({
@@ -27,8 +29,8 @@ const routeTree = rootRoute.addChildren([
   settingsRoute,
 ]);
 
-// Instantiate router
-export const router = createRouter({ routeTree, basepath: '/Finapp' });
+// Instantiate router using Hash History to prevent 404 reload errors on GitHub Pages
+export const router = createRouter({ routeTree, history: hashHistory });
 
 // Register router for type safety
 declare module '@tanstack/react-router' {
