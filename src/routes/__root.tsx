@@ -23,8 +23,8 @@ export const RootLayout: React.FC = () => {
   
   // Auth Form State
   const [isSignUp, setIsSignUp] = useState(false);
-  const [authEmail, setAuthEmail] = useState('user@financeos.com');
-  const [authPassword, setAuthPassword] = useState('password123');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
   const [authFirstName, setAuthFirstName] = useState('');
   const [authLastName, setAuthLastName] = useState('');
   const [authPhone, setAuthPhone] = useState('');
@@ -267,13 +267,7 @@ export const RootLayout: React.FC = () => {
             </button>
           </div>
 
-          <div className="mt-6 p-3 rounded-lg border border-border/40 bg-muted/40 text-[10px] text-muted-foreground">
-            <span className="font-bold text-foreground">Demo Login Details:</span>
-            <div className="mt-0.5 flex justify-between">
-              <span>Email: user@financeos.com</span>
-              <span>Pass: password123</span>
-            </div>
-          </div>
+
         </div>
       </div>
     );
