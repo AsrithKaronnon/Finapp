@@ -344,7 +344,7 @@ export const Bills: React.FC = () => {
 
                   {/* Right block details & actions */}
                   <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t border-border/10 sm:border-none pt-2 sm:pt-0 shrink-0">
-                    {!p.is_loan && (
+                    {!p.is_loan && p.recurrence_type_id !== SEED.recurrences.one_time && (
                       <button
                         onClick={() => handleToggleActive(p.id, p.is_active)}
                         className={`px-2 py-1 rounded-lg text-[9px] font-bold border transition-all cursor-pointer select-none ${
@@ -477,20 +477,22 @@ export const Bills: React.FC = () => {
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/45"
               />
             </div>
-            <div className="flex flex-col justify-end gap-1 pb-1 select-none">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="rounded border-border text-primary focus:ring-primary/45 h-4 w-4"
-                />
-                <label htmlFor="is_active" className="text-xs font-bold text-muted-foreground cursor-pointer">
-                  Active billing status
-                </label>
+            {formData.recurrence_type_id !== SEED.recurrences.one_time && (
+              <div className="flex flex-col justify-end gap-1 pb-1 select-none">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="is_active"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                    className="rounded border-border text-primary focus:ring-primary/45 h-4 w-4"
+                  />
+                  <label htmlFor="is_active" className="text-xs font-bold text-muted-foreground cursor-pointer">
+                    Active billing status
+                  </label>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 border-t border-border/40 pt-4 mt-4 select-none">
