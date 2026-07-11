@@ -335,7 +335,11 @@ export const Dashboard: React.FC = () => {
     if (apiKey) {
       setQuickAddLoading(true);
       try {
-        const prompt = `Parse this transaction into JSON. Convert any conversational or casual input into a clean, concise, and professional merchant or item name (e.g. "i bought some snacks for 60 rs" -> merchant: "Snacks"). Return ONLY the JSON object.
+        const prompt = `Parse this transaction into JSON. 
+CRITICAL RULE: The \`merchant\` field MUST be ONLY the core item or merchant name (1-3 words max). Strip ALL conversational filler like "hey", "I bought", "a", "some", "for". 
+Example 1: "hey i just baught a samosa for 20 rs" -> merchant: "Samosa"
+Example 2: "paid netflix 15 dollars" -> merchant: "Netflix"
+Return ONLY the JSON object.
 Categories: Food, Transport, Housing, Utilities, Entertainment, Shopping.
 Input: "${quickAddVal}"`;
 

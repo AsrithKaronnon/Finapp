@@ -51,8 +51,17 @@ export const Settings: React.FC = () => {
   const [newBudgetCustomName, setNewBudgetCustomName] = useState('');
   const [newBudgetAmount, setNewBudgetAmount] = useState<number>(0);
 
+  const [geminiKey, setGeminiKey] = useState('');
+  const [geminiKeyMsg, setGeminiKeyMsg] = useState('');
+
+
   useEffect(() => {
     // Load initial settings theme
+    
+    // Load Gemini Key
+    const savedGeminiKey = window.localStorage.getItem('gemini_api_key') || '';
+    setGeminiKey(savedGeminiKey);
+
     const savedTheme = window.localStorage.getItem('theme') || 'system';
     setTheme(savedTheme as any);
 
@@ -221,6 +230,14 @@ export const Settings: React.FC = () => {
     const newBudgets = [...userBudgets];
     newBudgets[index].amount = amt;
     setUserBudgets(newBudgets);
+  };
+
+  
+  const handleSaveGeminiKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    window.localStorage.setItem('gemini_api_key', geminiKey.trim());
+    setGeminiKeyMsg('API key saved successfully');
+    setTimeout(() => setGeminiKeyMsg(''), 3000);
   };
 
   const handleAddBudgetSubmit = async () => {
