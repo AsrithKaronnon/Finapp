@@ -325,7 +325,16 @@ export const Dashboard: React.FC = () => {
     e.preventDefault();
     if (!quickAddVal.trim() || accounts.length === 0) return;
 
-    const apiKey = window.localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY;
+    let apiKey = window.localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      try {
+        const { data } = await supabase.from('secrets').select('key_value').eq('key_name', 'gemini_api_key').single();
+        if (data?.key_value) apiKey = data.key_value;
+      } catch (err) {
+        console.warn('Could not fetch gemini key from secrets table', err);
+      }
+    }
     
     let amount = 0;
     let merchant = 'General Entry';

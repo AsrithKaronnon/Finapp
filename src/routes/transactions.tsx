@@ -162,8 +162,17 @@ export const Transactions: React.FC = () => {
     e.preventDefault();
     if (!quickAddVal.trim() || accounts.length === 0) return;
 
-    const apiKey = window.localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY;
+    let apiKey = window.localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY;
     
+    if (!apiKey) {
+      try {
+        const { data } = await supabase.from('secrets').select('key_value').eq('key_name', 'gemini_api_key').single();
+        if (data?.key_value) apiKey = data.key_value;
+      } catch (err) {
+        console.warn('Could not fetch gemini key from secrets table', err);
+      }
+    }
+
     let amount = 0;
     let merchant = 'General Entry';
     let isIncome = false;
@@ -172,7 +181,11 @@ export const Transactions: React.FC = () => {
     if (apiKey) {
       setQuickAddLoading(true);
       try {
-        const prompt = `Parse this transaction into JSON. Return ONLY the JSON object.
+        const prompt = `Parse this transaction into JSON. 
+CRITICAL RULE: The \`merchant\` field MUST be ONLY the core item or merchant name (1-3 words max). Strip ALL conversational filler like "hey", "I bought", "a", "some", "for". 
+Example 1: "hey i just baught a samosa for 20 rs" -> merchant: "Samosa"
+Example 2: "paid netflix 15 dollars" -> merchant: "Netflix"
+Return ONLY the JSON object.
 Categories: Food, Transport, Housing, Utilities, Entertainment, Shopping.
 Input: "${quickAddVal}"`;
 
