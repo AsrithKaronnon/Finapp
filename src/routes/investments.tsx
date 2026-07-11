@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from '../lib/useToastStore';
+import { confirm } from '../lib/useConfirmStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
   Plus, TrendingUp, TrendingDown, Landmark, PieChart as PieIcon, Percent, Trash2 
@@ -90,15 +91,22 @@ export const Investments: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this investment asset from your portfolio?')) return;
-    try {
-      await supabase.from('investments').delete().eq('id', id);
-      fetchInvestments();
-      toast.success('Asset removed');
-    } catch (err) {
-      toast.error('Error deleting asset');
-    }
+  const handleDelete = (id: string) => {
+    confirm({
+      title: 'Remove Asset',
+      description: 'Are you sure you want to remove this investment asset from your portfolio?',
+      destructive: true,
+      confirmText: 'Remove',
+      onConfirm: async () => {
+        try {
+          await supabase.from('investments').delete().eq('id', id);
+          fetchInvestments();
+          toast.success('Asset removed');
+        } catch (err) {
+          toast.error('Error deleting asset');
+        }
+      }
+    });
   };
 
   // Portfolio Calculations

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from '../lib/useToastStore';
+import { confirm } from '../lib/useConfirmStore';
 import { Plus, Trash2, Edit3, ShieldAlert, Sliders } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -149,19 +150,26 @@ export const MasterData: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this master configuration record?')) return;
-    try {
-      const { error } = await supabase
-        .from(activeTable)
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-      fetchItems();
-      toast.success('Record deleted');
-    } catch (err) {
-      toast.error('Error deleting record');
-    }
+  const handleDelete = (id: string) => {
+    confirm({
+      title: 'Delete Configuration',
+      description: 'Are you sure you want to delete this master configuration record?',
+      destructive: true,
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from(activeTable)
+            .delete()
+            .eq('id', id);
+          if (error) throw error;
+          fetchItems();
+          toast.success('Record deleted');
+        } catch (err) {
+          toast.error('Error deleting record');
+        }
+      }
+    });
   };
 
   return (

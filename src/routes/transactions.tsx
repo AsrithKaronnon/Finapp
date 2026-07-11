@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from '../lib/useToastStore';
+import { confirm } from '../lib/useConfirmStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
   Plus, Search, Trash2, Sparkles, FileText, Pencil, Download 
@@ -357,15 +358,22 @@ Input: "${quickAddVal}"`;
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Remove this transaction record?')) return;
-    try {
-      await supabase.from('transactions').delete().eq('id', id);
-      fetchData();
-      toast.success('Transaction deleted');
-    } catch (err) {
-      toast.error('Error deleting transaction');
-    }
+  const handleDelete = (id: string) => {
+    confirm({
+      title: 'Delete Transaction',
+      description: 'Remove this transaction record?',
+      destructive: true,
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          await supabase.from('transactions').delete().eq('id', id);
+          fetchData();
+          toast.success('Transaction deleted');
+        } catch (err) {
+          toast.error('Error deleting transaction');
+        }
+      }
+    });
   };
 
   const handleExportCSV = () => {

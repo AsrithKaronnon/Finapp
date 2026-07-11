@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from '../lib/useToastStore';
+import { confirm } from '../lib/useConfirmStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
   Plus, Hammer, CheckCircle2, Trash2, Pencil 
@@ -136,15 +137,22 @@ export const HousePlanner: React.FC = () => {
     }
   };
 
-  const handleDeleteItem = async (id: string) => {
-    if (!confirm('Remove this furnishing checklist item?')) return;
-    try {
-      await supabase.from('house_furnishing_items').delete().eq('id', id);
-      fetchData();
-      toast.success('Checklist item deleted');
-    } catch (err) {
-      toast.error('Error deleting checklist item');
-    }
+  const handleDeleteItem = (id: string) => {
+    confirm({
+      title: 'Delete Item',
+      description: 'Remove this furnishing checklist item?',
+      destructive: true,
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          await supabase.from('house_furnishing_items').delete().eq('id', id);
+          fetchData();
+          toast.success('Checklist item deleted');
+        } catch (err) {
+          toast.error('Error deleting checklist item');
+        }
+      }
+    });
   };
 
   const activeRoom = rooms.find(r => r.id === activeRoomId);

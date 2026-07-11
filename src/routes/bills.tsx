@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from '../lib/useToastStore';
+import { confirm } from '../lib/useConfirmStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
   Plus, AlertCircle, Trash2, Sparkles, Check, Edit
@@ -158,19 +159,26 @@ export const Bills: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, isLoan = false) => {
+  const handleDelete = (id: string, isLoan = false) => {
     if (isLoan) {
       toast.info("Please manage active loans in your bank portal. Set local billing logs to delete them.");
       return;
     }
-    if (!confirm('Remove this payment log?')) return;
-    try {
-      await supabase.from('bills').delete().eq('id', id);
-      fetchData();
-      toast.success('Bill deleted');
-    } catch (err) {
-      toast.error('Error deleting bill');
-    }
+    confirm({
+      title: 'Delete Bill',
+      description: 'Remove this payment log?',
+      destructive: true,
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          await supabase.from('bills').delete().eq('id', id);
+          fetchData();
+          toast.success('Bill deleted');
+        } catch (err) {
+          toast.error('Error deleting bill');
+        }
+      }
+    });
   };
 
   const handlePay = async () => {

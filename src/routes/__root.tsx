@@ -11,6 +11,7 @@ import { Button } from '../components/ui/Button';
 import { ToastContainer } from '../components/ui/Toast';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { toast } from '../lib/useToastStore';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export const RootLayout: React.FC = () => {
@@ -530,6 +531,7 @@ export const RootLayout: React.FC = () => {
         </div>
       </Dialog>
 
+      <ConfirmDialog />
       <ToastContainer />
     </div>
   );

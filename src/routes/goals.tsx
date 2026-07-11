@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { toast } from '../lib/useToastStore';
+import { confirm } from '../lib/useConfirmStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
   Plus, Target, Calendar, Trash2, Sparkles 
@@ -102,15 +103,22 @@ export const Goals: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this savings goal?')) return;
-    try {
-      await supabase.from('goals').delete().eq('id', id);
-      fetchGoals();
-      toast.success('Goal deleted');
-    } catch (err) {
-      toast.error('Error deleting goal');
-    }
+  const handleDelete = (id: string) => {
+    confirm({
+      title: 'Delete Goal',
+      description: 'Are you sure you want to delete this savings goal?',
+      destructive: true,
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          await supabase.from('goals').delete().eq('id', id);
+          fetchGoals();
+          toast.success('Goal deleted');
+        } catch (err) {
+          toast.error('Error deleting goal');
+        }
+      }
+    });
   };
 
   const handleDeposit = async (e: React.FormEvent) => {
