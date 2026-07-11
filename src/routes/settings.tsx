@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { 
   Sun, Moon, Monitor, 
-  RefreshCw, ShieldCheck, Globe, User, ShieldAlert, KeyRound, LogOut, ChevronDown
+  RefreshCw, ShieldCheck, Globe, User, ShieldAlert, KeyRound, LogOut, ChevronDown, Sliders
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Dialog } from '../components/ui/Dialog';
+import { SEED } from '../lib/supabaseMock';
 
 export const Settings: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
@@ -34,6 +35,12 @@ export const Settings: React.FC = () => {
 
   // Collapsible Accordion State
   const [activeSection, setActiveSection] = useState<string | null>(null);
+
+  // Budgets Configuration State
+  const [categories, setCategories] = useState<any[]>([]);
+  const [categoryBudgets, setCategoryBudgets] = useState<Record<string, number>>({});
+  const [budgetsLoading, setBudgetsLoading] = useState(false);
+  const [budgetsMsg, setBudgetsMsg] = useState('');
 
   useEffect(() => {
     // Load initial settings theme
@@ -63,6 +70,22 @@ export const Settings: React.FC = () => {
           setLastName(user.user_metadata.last_name || '');
           setPhone(user.user_metadata.phone || '');
         }
+      }
+    });
+
+    // Fetch expense categories & user budgets
+    supabase.from('expense_categories').select('*').then(({ data: catData }) => {
+      if (catData) {
+        setCategories(catData);
+        supabase.from('budgets').select('*').then(({ data: budgetData }) => {
+          if (budgetData) {
+            const budgetMap: Record<string, number> = {};
+            budgetData.forEach((b: any) => {
+              budgetMap[b.category_id] = parseFloat(b.amount) || 0;
+            });
+            setCategoryBudgets(budgetMap);
+          }
+        });
       }
     });
   }, []);
@@ -161,6 +184,40 @@ export const Settings: React.FC = () => {
       await supabase.from('user_settings').upsert({ base_currency_id: newCurr }, { onConflict: 'created_by' });
     } catch (err) {
       console.error('Error updating base currency:', err);
+    }
+  };
+
+  const handleSaveBudgets = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBudgetsLoading(true);
+    setBudgetsMsg('');
+    try {
+      const promises = categories.map(async (cat) => {
+        const amt = categoryBudgets[cat.id] || 0;
+        const { data: existing } = await supabase
+          .from('budgets')
+          .select('id')
+          .eq('category_id', cat.id)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase.from('budgets').update({ amount: amt }).eq('id', existing.id);
+        } else {
+          await supabase.from('budgets').insert([{
+            category_id: cat.id,
+            amount: amt,
+            budget_type_id: SEED.recurrences.monthly
+          }]);
+        }
+      });
+
+      await Promise.all(promises);
+      setBudgetsMsg('Budget limits updated successfully!');
+      setTimeout(() => setBudgetsMsg(''), 3000);
+    } catch (err: any) {
+      setBudgetsMsg(`Error: ${err.message}`);
+    } finally {
+      setBudgetsLoading(false);
     }
   };
 
@@ -435,6 +492,76 @@ export const Settings: React.FC = () => {
                   ))}
                 </select>
               </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* Budget Limits Card */}
+        <Card className="overflow-hidden">
+          <CardHeader 
+            onClick={() => setActiveSection(activeSection === 'budgets' ? null : 'budgets')} 
+            className="pb-3 select-none cursor-pointer hover:bg-muted/10 transition-colors flex flex-row items-center justify-between"
+          >
+            <div>
+              <CardTitle className="text-sm flex items-center gap-1.5">
+                <Sliders className="h-4.5 w-4.5 text-primary" />
+                Budget Limits Configuration
+              </CardTitle>
+              <CardDescription className="text-xs">Configure your monthly category spending ceilings</CardDescription>
+            </div>
+            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+              activeSection === 'budgets' ? 'transform rotate-180' : ''
+            }`} />
+          </CardHeader>
+          {activeSection === 'budgets' && (
+            <CardContent>
+              <form onSubmit={handleSaveBudgets} className="space-y-4">
+                {budgetsMsg && (
+                  <div className={`p-3 rounded-lg border text-xs font-semibold bg-emerald-500/10 border-emerald-500/25 text-emerald-500`}>
+                    {budgetsMsg}
+                  </div>
+                )}
+                
+                <p className="text-[11px] text-muted-foreground select-none">
+                  Define your monthly spending limit for each category. Enter 0 to disable tracking for that category.
+                </p>
+
+                <div className="space-y-3.5">
+                  {categories.map((cat) => {
+                    const activeCurrencySymbol = currencies.find(c => c.id === currency)?.symbol || '$';
+                    const value = categoryBudgets[cat.id] === undefined ? '' : categoryBudgets[cat.id];
+                    return (
+                      <div key={cat.id} className="flex justify-between items-center gap-4 border-b border-border/30 pb-2 last:border-0 last:pb-0">
+                        <div className="flex flex-col select-none">
+                          <span className="text-xs font-bold text-foreground">{cat.name}</span>
+                          <span className="text-[9px] text-muted-foreground mt-0.5">{cat.remarks || 'Monthly Allowance'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-xs text-muted-foreground select-none font-semibold">{activeCurrencySymbol}</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={value}
+                            onChange={(e) => setCategoryBudgets({
+                              ...categoryBudgets,
+                              [cat.id]: parseFloat(e.target.value) || 0
+                            })}
+                            className="w-24 px-2 py-1 rounded border border-border bg-background text-xs font-bold font-mono focus:outline-none focus:ring-2 focus:ring-primary/45 text-right"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-2 flex justify-start">
+                  <Button type="submit" loading={budgetsLoading} className="py-2 px-4 text-xs font-bold cursor-pointer">
+                    Save Budget Ceilings
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           )}
         </Card>

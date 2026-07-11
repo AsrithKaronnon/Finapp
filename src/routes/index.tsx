@@ -130,8 +130,8 @@ export const Dashboard: React.FC = () => {
   const savingsRate = Math.max(0, Math.round(((monthlyIncome - monthlyExpense) / monthlyIncome) * 100));
 
   // Budget progress
-  const totalBudgeted = budgets.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0) || 1200;
-  const budgetPct = Math.min(100, Math.round((monthlyExpense / totalBudgeted) * 100));
+  const totalBudgeted = budgets.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+  const budgetPct = totalBudgeted > 0 ? Math.min(100, Math.round((monthlyExpense / totalBudgeted) * 100)) : 0;
 
   // Visual trend chart data dynamically derived from transaction logs
   const getTrendData = () => {
