@@ -251,8 +251,9 @@ Input: "${quickAddVal}"`;
           else if (cat === 'Entertainment') categoryId = SEED.expense_categories.entertainment;
           else categoryId = SEED.expense_categories.shopping;
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Gemini NLP parsing failed, falling back to local:', err);
+        toast.error('Gemini AI error (falling back to local): ' + err.message);
         const localParsed = parseLocal(quickAddVal);
         if (!localParsed) return;
         amount = localParsed.amount;
