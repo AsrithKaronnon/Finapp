@@ -335,7 +335,7 @@ export const Dashboard: React.FC = () => {
     if (apiKey) {
       setQuickAddLoading(true);
       try {
-        const prompt = `Parse this transaction into JSON. Return ONLY the JSON object.
+        const prompt = `Parse this transaction into JSON. Convert any conversational or casual input into a clean, concise, and professional merchant or item name (e.g. "i bought some snacks for 60 rs" -> merchant: "Snacks"). Return ONLY the JSON object.
 Categories: Food, Transport, Housing, Utilities, Entertainment, Shopping.
 Input: "${quickAddVal}"`;
 
