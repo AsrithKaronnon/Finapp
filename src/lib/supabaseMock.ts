@@ -533,7 +533,9 @@ class MockQueryBuilder {
   }
 
   select(_columns: string = '*') {
-    this.operation = 'select';
+    if (!this.operation) {
+      this.operation = 'select';
+    }
     return this;
   }
 
