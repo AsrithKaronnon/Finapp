@@ -119,7 +119,7 @@ export const NetWorth: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center bg-primary/5 border border-primary/20">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Absolute Net Worth</span>
-              <span className="text-2xl font-bold text-foreground">{currencySymbol}{netWorthValuation.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span className="text-2xl font-bold text-foreground">{currencySymbol}{netWorthValuation.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
               <span className="text-[10px] text-emerald-500 font-semibold flex items-center gap-0.5">
                 <ArrowUpRight className="h-3.5 w-3.5" />
                 +{monthlyGrowthPct.toFixed(2)}% vs last month
@@ -132,7 +132,7 @@ export const NetWorth: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Gross Capital Assets</span>
-              <span className="text-2xl font-bold text-foreground">{currencySymbol}{totalAssets.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span className="text-2xl font-bold text-foreground">{currencySymbol}{totalAssets.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
               <span className="text-[10px] text-muted-foreground">Cash, property, stock indices</span>
             </div>
           </CardContent>
@@ -142,7 +142,7 @@ export const NetWorth: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Combined Debts & Liabilities</span>
-              <span className="text-2xl font-bold text-foreground">{currencySymbol}{totalLiabilities.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span className="text-2xl font-bold text-foreground">{currencySymbol}{totalLiabilities.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
               <span className="text-[10px] text-muted-foreground">Mortgages, loans, CC balances</span>
             </div>
           </CardContent>
@@ -153,7 +153,7 @@ export const NetWorth: React.FC = () => {
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Monthly Value Accrued</span>
               <span className={`text-xl font-bold flex items-center ${monthlyGrowthAmount >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {monthlyGrowthAmount >= 0 ? '+' : ''}{currencySymbol}{monthlyGrowthAmount.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                {monthlyGrowthAmount >= 0 ? '+' : ''}{currencySymbol}{monthlyGrowthAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </span>
               <span className="text-[10px] text-muted-foreground">Net growth this month</span>
             </div>
@@ -208,21 +208,21 @@ export const NetWorth: React.FC = () => {
               <CardHeader className="pb-3 border-b border-border/40 bg-muted/10">
                 <CardTitle className="text-xs uppercase tracking-wider flex justify-between">
                   <span>Balance Sheet: Assets</span>
-                  <span className="text-emerald-500">{currencySymbol}{totalAssets.toLocaleString()}</span>
+                  <span className="text-emerald-500">{currencySymbol}{totalAssets.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 space-y-3 text-xs">
                 <div className="flex justify-between items-center border-b border-border/20 pb-2">
                   <span className="text-muted-foreground font-semibold">Cash & Banks Checking</span>
-                  <span className="font-mono text-foreground font-bold">{currencySymbol}{bankAssets.toLocaleString()}</span>
+                  <span className="font-mono text-foreground font-bold">{currencySymbol}{bankAssets.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-border/20 pb-2">
                   <span className="text-muted-foreground font-semibold">Stocks & Index Portfolios</span>
-                  <span className="font-mono text-foreground font-bold">{currencySymbol}{stockAssets.toLocaleString()}</span>
+                  <span className="font-mono text-foreground font-bold">{currencySymbol}{stockAssets.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground font-semibold">Condominium Property</span>
-                  <span className="font-mono text-foreground font-bold">{currencySymbol}{physicalAssets.toLocaleString()}</span>
+                  <span className="font-mono text-foreground font-bold">{currencySymbol}{physicalAssets.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                 </div>
               </CardContent>
             </Card>
@@ -232,17 +232,17 @@ export const NetWorth: React.FC = () => {
               <CardHeader className="pb-3 border-b border-border/40 bg-muted/10">
                 <CardTitle className="text-xs uppercase tracking-wider flex justify-between">
                   <span>Balance Sheet: Liabilities</span>
-                  <span className="text-rose-500">{currencySymbol}{totalLiabilities.toLocaleString()}</span>
+                  <span className="text-rose-500">{currencySymbol}{totalLiabilities.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 space-y-3 text-xs">
                 <div className="flex justify-between items-center border-b border-border/20 pb-2">
                   <span className="text-muted-foreground font-semibold">Outstanding Loan Mortgages</span>
-                  <span className="font-mono text-foreground font-bold">{currencySymbol}{loanDebts.toLocaleString()}</span>
+                  <span className="font-mono text-foreground font-bold">{currencySymbol}{loanDebts.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground font-semibold">Credit Card Statement dues</span>
-                  <span className="font-mono text-foreground font-bold">{currencySymbol}{creditCardDebts.toLocaleString()}</span>
+                  <span className="font-mono text-foreground font-bold">{currencySymbol}{creditCardDebts.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                 </div>
               </CardContent>
             </Card>

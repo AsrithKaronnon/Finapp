@@ -8,6 +8,7 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Dialog } from '../components/ui/Dialog';
+import { Skeleton } from '../components/ui/Skeleton';
 
 export const Goals: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -95,7 +96,7 @@ export const Goals: React.FC = () => {
       await supabase.from('goals').insert([formData]);
       setIsModalOpen(false);
       fetchGoals();
-      toast.success('Goal saved successfully!');
+      toast.success('Goal saved');
     } catch (err) {
       toast.error('Error saving goal');
     }
@@ -106,7 +107,7 @@ export const Goals: React.FC = () => {
     try {
       await supabase.from('goals').delete().eq('id', id);
       fetchGoals();
-      toast.success('Goal deleted successfully');
+      toast.success('Goal deleted');
     } catch (err) {
       toast.error('Error deleting goal');
     }
@@ -140,7 +141,7 @@ export const Goals: React.FC = () => {
       setDepositGoal(null);
       setDepositAmount(0);
       fetchGoals();
-      toast.success('Contribution added successfully!');
+      toast.success('Contribution added');
     } catch (err) {
       toast.error('Error processing contribution');
     }
@@ -149,30 +150,37 @@ export const Goals: React.FC = () => {
   return (
     <div className="flex flex-col gap-6">
       
-      {/* Page Title */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 select-none">
+      {/* HEADER: Title & Actions */}
+      <div className="flex justify-between items-end select-none mb-4 sm:mb-6">
         <div>
-          <h1 className="text-xl font-bold text-foreground">My Savings Goals</h1>
-          <p className="text-xs text-muted-foreground">Keep money aside for important goals like a bike, car, wedding or vacation.</p>
+          <h1 className="page-title text-foreground">My Savings Goals</h1>
+          <p className="secondary-text">Keep money aside for important goals like a bike, car, wedding or vacation.</p>
         </div>
-        <Button onClick={handleOpenAdd} size="sm" className="flex items-center gap-1.5 cursor-pointer text-xs">
-          <Plus className="h-4 w-4" />
-          Create a Goal
+        <Button 
+          onClick={handleOpenAdd} 
+          size="sm" 
+          className="flex items-center justify-center cursor-pointer h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-1.5 sm:gap-1.5 rounded-full sm:rounded-lg"
+        >
+          <Plus className="icon-inline" />
+          <span className="hidden sm:inline">Add Goal</span>
         </Button>
       </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="h-48 animate-pulse bg-card rounded-xl border border-border/50" />
-          <div className="h-48 animate-pulse bg-card rounded-xl border border-border/50" />
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} className="h-48 w-full skeleton" />
+          ))}
         </div>
       ) : goals.length === 0 ? (
-        <div className="py-16 text-center border border-dashed border-border rounded-2xl flex flex-col justify-center items-center gap-3 select-none">
-          <Target className="h-10 w-10 text-muted-foreground/60 animate-bounce" />
-          <div className="text-xs font-semibold text-foreground">No Goals Set Yet</div>
-          <Button size="sm" onClick={handleOpenAdd}>
-            Create My First Goal
-          </Button>
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground border border-dashed border-border/50 rounded-xl">
+          <Target className="h-12 w-12 mb-3 opacity-20" />
+          <p className="text-sm font-medium text-foreground">No Goals Set Yet</p>
+          <div className="mt-4">
+            <Button size="sm" onClick={handleOpenAdd}>
+              Create My First Goal
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -198,8 +206,8 @@ export const Goals: React.FC = () => {
                 <CardContent className="flex-1 py-2 space-y-4">
                   {/* Progress info */}
                   <div className="flex justify-between items-baseline text-xs font-bold text-foreground">
-                    <span>{currencySymbol}{current.toLocaleString()} saved</span>
-                    <span className="text-[10px] text-muted-foreground font-normal">of {currencySymbol}{target.toLocaleString()}</span>
+                    <span>{currencySymbol}{current.toLocaleString('en-US', { maximumFractionDigits: 0 })} saved</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">of {currencySymbol}{target.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                   </div>
 
                   {/* Horizontal progress bar */}

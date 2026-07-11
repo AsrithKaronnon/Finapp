@@ -11,6 +11,7 @@ import { Button } from '../components/ui/Button';
 import { ToastContainer } from '../components/ui/Toast';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { toast } from '../lib/useToastStore';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export const RootLayout: React.FC = () => {
   const [session, setSession] = useState<any>(null);
@@ -313,11 +314,11 @@ export const RootLayout: React.FC = () => {
       <aside 
         className={`
           hidden md:flex flex-col h-full bg-card border-r border-border/50 transition-all duration-300 relative z-20 select-none
-          ${isSidebarCollapsed ? 'w-[70px]' : 'w-[240px]'}
+          ${isSidebarCollapsed ? 'w-[70px]' : 'w-[228px]'}
         `}
       >
         {/* Header Logo */}
-        <div className="flex items-center gap-3 p-5 border-b border-border/40 overflow-hidden h-[65px] shrink-0">
+        <div className="flex items-center gap-3 px-4 py-2 border-b border-border/40 overflow-hidden h-[44px] shrink-0">
           <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary text-primary-foreground font-bold shrink-0">
             $
           </div>
@@ -327,7 +328,7 @@ export const RootLayout: React.FC = () => {
         </div>
 
         {/* Sidebar Nav links */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-2 py-6 space-y-1 overflow-y-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = routerState.location.pathname === item.path;
@@ -336,14 +337,14 @@ export const RootLayout: React.FC = () => {
                 key={item.path}
                 to={item.path}
                 className={`
-                  flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer
+                  flex items-center gap-3 px-4 h-[44px] rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer
                   ${isActive 
-                    ? 'bg-primary text-primary-foreground shadow-xs' 
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'bg-primary/5 text-primary' 
+                    : 'text-muted-foreground hover:bg-[#F8F8F8] dark:hover:bg-white/5 hover:text-foreground'
                   }
                 `}
               >
-                <Icon className="h-[18px] w-[18px] shrink-0" />
+                <Icon className={`h-[20px] w-[20px] shrink-0 ${!isActive ? 'opacity-70' : 'opacity-100'}`} />
                 {!isSidebarCollapsed && <span>{item.label}</span>}
               </Link>
             );
@@ -351,16 +352,16 @@ export const RootLayout: React.FC = () => {
         </nav>
 
         {/* Sidebar footer theme/logout */}
-        <div className="p-3 border-t border-border/40 space-y-2">
+        <div className="px-2 pb-4 pt-4 flex flex-col gap-1">
           {!isSidebarCollapsed ? (
-            <div className="flex bg-muted/65 p-1 rounded-lg border border-border/30">
+            <div className="flex bg-muted/30 p-1 rounded-lg">
               {(['light', 'dark', 'system'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTheme(t)}
                   className={`
-                    flex-1 py-1 text-[10px] font-bold rounded capitalize flex justify-center items-center gap-1 cursor-pointer
-                    ${theme === t ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}
+                    flex-1 py-1 text-[10px] font-bold rounded capitalize flex justify-center items-center gap-1 cursor-pointer transition-all duration-150
+                    ${theme === t ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground opacity-70 hover:opacity-100'}
                   `}
                 >
                   {t === 'light' && <Sun className="h-3 w-3" />}
@@ -373,22 +374,22 @@ export const RootLayout: React.FC = () => {
           ) : (
             <button 
               onClick={() => setTheme(theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark')}
-              className="flex justify-center items-center w-full py-2 hover:bg-muted rounded-lg text-muted-foreground cursor-pointer"
+              className="flex justify-center items-center w-full h-[44px] hover:bg-[#F8F8F8] dark:hover:bg-white/5 rounded-lg text-muted-foreground opacity-70 hover:opacity-100 cursor-pointer transition-all duration-150"
             >
-              {theme === 'light' && <Sun className="h-4 w-4" />}
-              {theme === 'dark' && <Moon className="h-4 w-4" />}
-              {theme === 'system' && <Monitor className="h-4 w-4" />}
+              {theme === 'light' && <Sun className="h-[20px] w-[20px]" />}
+              {theme === 'dark' && <Moon className="h-[20px] w-[20px]" />}
+              {theme === 'system' && <Monitor className="h-[20px] w-[20px]" />}
             </button>
           )}
 
           <button
             onClick={handleSignOut}
             className={`
-              flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold text-destructive hover:bg-destructive/10 w-full transition-colors cursor-pointer
-              ${isSidebarCollapsed ? 'justify-center' : ''}
+              flex items-center gap-3 px-4 h-[44px] rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 w-full transition-all duration-150 cursor-pointer
+              ${isSidebarCollapsed ? 'justify-center px-0' : ''}
             `}
           >
-            <LogOut className="h-[18px] w-[18px] shrink-0" />
+            <LogOut className="h-[20px] w-[20px] shrink-0 opacity-80" />
             {!isSidebarCollapsed && <span>Log Out</span>}
           </button>
         </div>
@@ -403,7 +404,7 @@ export const RootLayout: React.FC = () => {
       </aside>
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-[64px] border-t border-border bg-card flex items-center justify-around px-2 z-40 select-none">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-[60px] border-t border-border bg-card flex items-center justify-evenly px-1 z-40 select-none pb-safe w-full">
         {navigationItems.slice(0, 4).map((item) => {
           const Icon = item.icon;
           const isActive = routerState.location.pathname === item.path;
@@ -412,12 +413,12 @@ export const RootLayout: React.FC = () => {
               key={item.path}
               to={item.path}
               className={`
-                flex flex-col items-center justify-center gap-1 flex-1 py-1 cursor-pointer
+                flex flex-col items-center justify-center gap-1 min-w-[44px] h-[44px] cursor-pointer flex-1
                 ${isActive ? 'text-primary' : 'text-muted-foreground'}
               `}
             >
-              <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-bold">{item.label.split(' ')[1] || item.label}</span>
+              <Icon className="h-[20px] w-[20px]" />
+              <span className="text-[11px] font-bold">{item.label.split(' ')[1] || item.label}</span>
             </Link>
           );
         })}
@@ -425,12 +426,12 @@ export const RootLayout: React.FC = () => {
         <Link
           to="/settings"
           className={`
-            flex flex-col items-center justify-center gap-1 flex-1 py-1 cursor-pointer
+            flex flex-col items-center justify-center gap-1 min-w-[44px] h-[44px] cursor-pointer flex-1
             ${routerState.location.pathname === '/settings' ? 'text-primary' : 'text-muted-foreground'}
           `}
         >
-          <Settings className="h-5 w-5" />
-          <span className="text-[10px] font-bold">Settings</span>
+          <Settings className="h-[20px] w-[20px]" />
+          <span className="text-[11px] font-bold">Settings</span>
         </Link>
       </div>
 
@@ -443,7 +444,7 @@ export const RootLayout: React.FC = () => {
             if (input) input.focus();
           }, 200);
         }}
-        className="md:hidden fixed bottom-[80px] right-4 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center z-40 cursor-pointer active:scale-95 transition-transform"
+        className="md:hidden fixed bottom-[76px] right-4 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center z-50 cursor-pointer active:scale-95 transition-transform"
       >
         <Plus className="h-6 w-6" />
       </button>
@@ -452,25 +453,28 @@ export const RootLayout: React.FC = () => {
       <div className="flex-1 flex flex-col h-full overflow-hidden pb-[64px] md:pb-0">
         
         {/* HEADER BAR */}
-        <header className="h-[65px] border-b border-border/40 bg-card px-6 flex items-center justify-between shrink-0 z-10 select-none">
+        <header className="h-[64px] border-b border-border/40 bg-card px-4 sm:px-6 flex items-center justify-between shrink-0 z-10 select-none">
           
           {/* Greeting message */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-foreground">
+          <div className="flex flex-col justify-center">
+            <span className="text-[16px] font-semibold text-foreground whitespace-nowrap leading-tight">
               {getGreeting()}, {getUserDisplayName()}!
+            </span>
+            <span className="text-[13px] text-muted-foreground whitespace-nowrap leading-tight">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </span>
           </div>
 
           {/* Right Header items */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
             {/* Notification bell */}
             <button
               onClick={() => setIsNotificationOpen(true)}
-              className="relative p-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground transition-colors cursor-pointer"
+              className="relative h-[40px] w-[40px] flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted/50 text-foreground transition-colors cursor-pointer shrink-0"
             >
-              <Bell className="h-4 w-4" />
+              <Bell className="h-[18px] w-[18px]" />
               {notifications.filter(n => !n.is_read).length > 0 && (
-                <span className="absolute top-[2px] right-[2px] h-2 w-2 rounded-full bg-destructive" />
+                <span className="absolute top-[8px] right-[8px] h-2 w-2 rounded-full bg-destructive" />
               )}
             </button>
           </div>
@@ -479,7 +483,18 @@ export const RootLayout: React.FC = () => {
         {/* SCROLLABLE MAIN OUTLET */}
         <main className="flex-1 overflow-y-auto bg-background/50 p-4 sm:p-6">
           <ErrorBoundary>
-            <Outlet />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={routerState.location.pathname}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.15, ease: 'easeInOut' }}
+                className="h-full"
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </ErrorBoundary>
         </main>
       </div>

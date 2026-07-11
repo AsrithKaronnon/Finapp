@@ -129,7 +129,7 @@ export const MasterData: React.FC = () => {
       }
       setIsModalOpen(false);
       fetchItems();
-      toast.success('Record saved successfully!');
+      toast.success('Record saved');
     } catch (err) {
       toast.error('Error saving record');
     }
@@ -143,7 +143,7 @@ export const MasterData: React.FC = () => {
         .eq('id', id);
       if (error) throw error;
       fetchItems();
-      toast.success('Status updated successfully');
+      toast.success('Status updated');
     } catch (err) {
       toast.error('Error updating active state');
     }
@@ -158,7 +158,7 @@ export const MasterData: React.FC = () => {
         .eq('id', id);
       if (error) throw error;
       fetchItems();
-      toast.success('Record deleted successfully');
+      toast.success('Record deleted');
     } catch (err) {
       toast.error('Error deleting record');
     }

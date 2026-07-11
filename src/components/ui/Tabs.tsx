@@ -15,7 +15,7 @@ interface TabsProps {
 
 export const Tabs: React.FC<TabsProps> = ({ options, activeId, onChange, className = '' }) => {
   return (
-    <div className={`flex bg-muted/50 p-1 rounded-xl border border-border/30 relative select-none ${className}`}>
+    <div className={`flex bg-muted/30 p-1 rounded-lg border border-[#E5E7EB] relative select-none ${className}`}>
       {options.map((option) => {
         const isActive = option.id === activeId;
         return (
@@ -23,14 +23,14 @@ export const Tabs: React.FC<TabsProps> = ({ options, activeId, onChange, classNa
             key={option.id}
             onClick={() => onChange(option.id)}
             className={`
-              relative flex-1 py-2 text-xs font-semibold rounded-lg transition-colors focus:outline-none z-10 cursor-pointer
-              ${isActive ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}
+              relative flex-1 py-1.5 text-xs font-medium rounded-md transition-colors focus:outline-none z-10 cursor-pointer
+              ${isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}
             `}
           >
             {isActive && (
               <motion.div
                 layoutId="activeTabBg"
-                className="absolute inset-0 bg-primary rounded-lg -z-10 shadow-sm"
+                className="absolute inset-0 bg-card rounded-md -z-10 shadow-sm border border-[#E5E7EB]"
                 transition={{ type: 'spring', stiffness: 350, damping: 28 }}
               />
             )}

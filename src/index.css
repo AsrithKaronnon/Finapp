@@ -29,7 +29,7 @@
 }
 
 :root {
-  --background: 210 40% 98%;
+  --background: 210 20% 98%;
   --foreground: 222.2 47.4% 11.2%;
 
   --card: 0 0% 100%;
@@ -41,53 +41,53 @@
   --primary: 246 83% 60%;
   --primary-foreground: 210 20% 98%;
 
-  --secondary: 210 40% 96.1%;
+  --secondary: 210 20% 96%;
   --secondary-foreground: 222.2 47.4% 11.2%;
 
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --muted: 210 20% 96%;
+  --muted-foreground: 215 16% 55%;
 
-  --accent: 246 83% 97%;
-  --accent-foreground: 246 83% 40%;
+  --accent: 210 20% 96%;
+  --accent-foreground: 222.2 47.4% 11.2%;
 
-  --destructive: 0 84.2% 60.2%;
+  --destructive: 0 65% 60%;
   --destructive-foreground: 210 20% 98%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
+  --border: 220 13% 94%;
+  --input: 220 13% 94%;
   --ring: 246 83% 60%;
 
   --radius: 0.75rem;
 }
 
 .dark {
-  --background: 204 40% 7%;
+  --background: 204 20% 5%;
   --foreground: 200 15% 93%;
 
-  --card: 202 23% 16%;
+  --card: 202 23% 9%;
   --card-foreground: 200 15% 93%;
 
-  --popover: 202 23% 16%;
+  --popover: 202 23% 9%;
   --popover-foreground: 200 15% 93%;
 
-  --primary: 167 100% 33%;
+  --primary: 246 83% 65%;
   --primary-foreground: 204 40% 98%;
 
-  --secondary: 203 32% 10%;
+  --secondary: 203 32% 15%;
   --secondary-foreground: 200 15% 93%;
 
-  --muted: 203 32% 10%;
-  --muted-foreground: 203 12% 58%;
+  --muted: 203 32% 15%;
+  --muted-foreground: 203 12% 55%;
 
-  --accent: 167 100% 12%;
-  --accent-foreground: 167 100% 85%;
+  --accent: 203 32% 15%;
+  --accent-foreground: 200 15% 93%;
 
-  --destructive: 354 70% 54%;
+  --destructive: 0 65% 55%;
   --destructive-foreground: 210 20% 98%;
 
-  --border: 202 22% 17%;
-  --input: 202 22% 17%;
-  --ring: 167 100% 33%;
+  --border: 200 5% 18%;
+  --input: 200 5% 18%;
+  --ring: 246 83% 65%;
 }
 
 * {
@@ -101,17 +101,15 @@ body {
   overflow-x: hidden;
 }
 
-/* Glassmorphism utility classes */
+/* Flat card utility instead of glass */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: var(--color-card);
+  border: 1px solid hsl(var(--border));
 }
 
 .dark .glass {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--color-card);
+  border: 1px solid hsl(var(--border));
 }
 
 /* Premium Scrollbar */
@@ -133,12 +131,12 @@ body {
   background: hsl(var(--muted-foreground));
 }
 
-/* Custom animations and glow effects */
+/* Custom animations and glow effects removed for minimalism */
 .glow-primary {
-  box-shadow: 0 0 20px -5px rgba(99, 102, 241, 0.3);
+  /* No glow */
 }
 .dark .glow-primary {
-  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.5);
+  /* No glow */
 }
 
 /* Hide arrow keys on number inputs */
@@ -161,4 +159,137 @@ select {
   background-position: right 0.75rem center !important;
   background-size: 0.9rem !important;
   padding-right: 2.25rem !important;
+}
+
+/* Global Premium Design System Typography & Inputs */
+input, select, textarea {
+  border-radius: 10px !important;
+  border: 1px solid var(--border) !important; /* Update from hardcoded hex to var */
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+input:not(textarea), select {
+  height: 44px !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  border-color: hsl(var(--primary)) !important;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.15) !important;
+}
+
+/* Global Transition Override for Interactive Elements */
+a, button, [role="button"], [class*="hover:"] {
+  transition-duration: 150ms !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Smooth Accordion/Disclosure Expand */
+details {
+  transition: height 150ms ease-in-out;
+}
+details[open] summary ~ * {
+  animation: sweep 150ms ease-in-out;
+}
+@keyframes sweep {
+  0%    {opacity: 0; transform: translateY(-5px)}
+  100%  {opacity: 1; transform: translateY(0)}
+}
+
+/* Subtle, fast skeleton loading */
+.skeleton {
+  background: linear-gradient(90deg, hsl(var(--muted)/0.5) 25%, hsl(var(--muted)) 50%, hsl(var(--muted)/0.5) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite ease-in-out;
+  border-radius: var(--radius-md);
+}
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Typography System */
+.metric {
+  font-size: 40px !important;
+  font-weight: 700 !important;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
+}
+
+.page-title, h1 {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 640px) {
+  .page-title, h1 {
+    font-size: 30px !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .page-title + .secondary-text,
+  .page-title + p.secondary-text {
+    display: none !important;
+  }
+}
+
+.section-heading, h2 {
+  font-size: 22px !important;
+  font-weight: 600 !important;
+}
+
+.card-title, h3 {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+}
+
+.body-text, p {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.secondary-text, .text-muted-foreground {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: hsl(var(--muted-foreground));
+}
+
+.label-text, label, .section-label {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Remove unnecessary bold text globally, except where explicitly defined above */
+strong, b {
+  font-weight: 600;
+}
+
+/* Icon sizes */
+svg.lucide {
+  stroke-width: 2px;
+}
+.icon-nav { width: 20px !important; height: 20px !important; }
+.icon-card { width: 18px !important; height: 18px !important; }
+.icon-inline { width: 16px !important; height: 16px !important; }
+.icon-status { width: 16px !important; height: 16px !important; }
+
+/* Global overrides for borders and spacing */
+* {
+  border-color: #E5E7EB;
+}
+
+.shadow-card {
+  box-shadow: 0 1px 2px rgba(0,0,0,.04) !important;
+}
+.shadow-dialog {
+  box-shadow: 0 10px 30px rgba(0,0,0,.08) !important;
 }

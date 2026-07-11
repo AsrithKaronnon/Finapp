@@ -149,7 +149,7 @@ export const Loans: React.FC = () => {
       if (error) throw error;
       setIsModalOpen(false);
       fetchLoans();
-      toast.success('Loan record saved successfully!');
+      toast.success('Loan record saved');
     } catch (err) {
       toast.error('Error entering loan details');
     }
@@ -185,7 +185,7 @@ export const Loans: React.FC = () => {
 
       setPayingLoan(null);
       fetchLoans();
-      toast.success('EMI payment posted successfully!');
+      toast.success('EMI payment posted');
     } catch (err) {
       toast.error('Error posting EMI payment');
     }
@@ -222,7 +222,7 @@ export const Loans: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center bg-primary/5 border border-primary/20">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Outstanding Debt</span>
-              <span className="text-xl font-bold text-foreground">{currencySymbol}{totalOutstanding.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span className="text-xl font-bold text-foreground">{currencySymbol}{totalOutstanding.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
             </div>
             <div className="h-9 w-9 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500">
               <ShieldAlert className="h-5 w-5" />
@@ -234,7 +234,7 @@ export const Loans: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Monthly EMI Dues</span>
-              <span className="text-xl font-bold text-foreground">{currencySymbol}{totalMonthlyEMI.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span className="text-xl font-bold text-foreground">{currencySymbol}{totalMonthlyEMI.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
             </div>
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
               <Percent className="h-5 w-5" />
@@ -297,7 +297,7 @@ export const Loans: React.FC = () => {
                   </CardHeader>
                   <CardContent className="p-4 pt-0 text-xs">
                     <div className="flex flex-col items-end text-xs font-bold text-foreground font-mono">
-                      <span>{currencySymbol}{loan.outstanding_amount.toLocaleString()} left</span>
+                      <span>{currencySymbol}{loan.outstanding_amount.toLocaleString('en-US', { maximumFractionDigits: 0 })} left</span>
                       <span>EMI: {currencySymbol}{loan.monthly_emi}</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-1.5 mt-2 overflow-hidden">
@@ -359,10 +359,10 @@ export const Loans: React.FC = () => {
                         {scheduleData.map((row) => (
                           <tr key={row.month} className="border-b border-border/30 hover:bg-muted/10">
                             <td className="p-3 pl-5 text-muted-foreground font-bold">Month {row.month}</td>
-                            <td className="p-3 font-mono font-semibold">{currencySymbol}{row.emi.toFixed(2)}</td>
-                            <td className="p-3 text-emerald-500 font-mono">{currencySymbol}{row.principalPaid.toFixed(2)}</td>
-                            <td className="p-3 text-rose-500 font-mono">{currencySymbol}{row.interest.toFixed(2)}</td>
-                            <td className="p-3 font-mono font-semibold">{currencySymbol}{row.balance.toFixed(2)}</td>
+                            <td className="p-3 font-mono font-semibold">{currencySymbol}{row.emi.toFixed(0)}</td>
+                            <td className="p-3 text-emerald-500 font-mono">{currencySymbol}{row.principalPaid.toFixed(0)}</td>
+                            <td className="p-3 text-rose-500 font-mono">{currencySymbol}{row.interest.toFixed(0)}</td>
+                            <td className="p-3 font-mono font-semibold">{currencySymbol}{row.balance.toFixed(0)}</td>
                             <td className="p-3 pr-5 text-center">
                               <Badge variant={row.status === 'paid' ? 'success' : 'neutral'} className="text-[9px]">
                                 {row.status === 'paid' ? 'Paid' : 'Upcoming'}

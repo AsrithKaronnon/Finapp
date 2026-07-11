@@ -187,7 +187,7 @@ export const HousePlanner: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Project Budget</span>
-              <span className="text-xl font-bold text-foreground">${totalProjectBudget.toLocaleString()}</span>
+              <span className="text-xl font-bold text-foreground">${totalProjectBudget.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
             </div>
           </CardContent>
         </Card>
@@ -196,7 +196,7 @@ export const HousePlanner: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Furnishing Estimate</span>
-              <span className="text-xl font-bold text-foreground">${totalProjectEstimate.toLocaleString()}</span>
+              <span className="text-xl font-bold text-foreground">${totalProjectEstimate.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
             </div>
           </CardContent>
         </Card>
@@ -205,7 +205,7 @@ export const HousePlanner: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Capital Outflow Spent</span>
-              <span className="text-xl font-bold text-foreground">${totalProjectActual.toLocaleString()}</span>
+              <span className="text-xl font-bold text-foreground">${totalProjectActual.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
             </div>
           </CardContent>
         </Card>
@@ -247,7 +247,7 @@ export const HousePlanner: React.FC = () => {
                 >
                   <CardHeader className="p-4">
                     <CardTitle className="text-sm">{room.name}</CardTitle>
-                    <CardDescription className="text-xs">Budget limit: ${room.budget.toLocaleString()}</CardDescription>
+                    <CardDescription className="text-xs">Budget limit: ${room.budget.toLocaleString('en-US', { maximumFractionDigits: 0 })}</CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 pt-0 text-xs">
                     <div className="w-full bg-muted rounded-full h-1 mt-1 overflow-hidden">
@@ -270,7 +270,7 @@ export const HousePlanner: React.FC = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <CardTitle className="text-base">{activeRoom?.name}</CardTitle>
-                    <CardDescription>Budget allocated: ${activeRoom?.budget?.toLocaleString()} | spent: ${totalRoomActual.toLocaleString()}</CardDescription>
+                    <CardDescription>Budget allocated: ${activeRoom?.budget?.toLocaleString('en-US', { maximumFractionDigits: 0 })} | spent: ${totalRoomActual.toLocaleString('en-US', { maximumFractionDigits: 0 })}</CardDescription>
                   </div>
                   <Badge variant={totalRoomActual > (activeRoom?.budget || 0) ? 'danger' : 'success'}>
                     {totalRoomActual > (activeRoom?.budget || 0) ? 'Budget Overrun' : 'Within Budget'}
@@ -319,9 +319,9 @@ export const HousePlanner: React.FC = () => {
                               </td>
                               <td className="p-3"><Badge variant="primary" className="text-[9px]">{furniture}</Badge></td>
                               <td className="p-3 text-muted-foreground font-medium">{item.vendor || '—'}</td>
-                              <td className="p-3 text-right font-mono">{currencySymbol}{item.estimated_cost.toLocaleString()}</td>
+                              <td className="p-3 text-right font-mono">{currencySymbol}{item.estimated_cost.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
                               <td className={`p-3 text-right font-mono font-bold ${isOver ? 'text-rose-500' : ''}`}>
-                                {item.actual_cost ? `${currencySymbol}${item.actual_cost.toLocaleString()}` : 'Pending'}
+                                {item.actual_cost ? `${currencySymbol}${item.actual_cost.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : 'Pending'}
                               </td>
                               <td className="p-3 text-center">
                                 <Badge variant={item.status_id === SEED.statuses.completed ? 'success' : 'warning'} className="text-[9px]">

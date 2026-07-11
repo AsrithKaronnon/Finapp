@@ -34,7 +34,7 @@ export const Dialog: React.FC<DialogProps> = ({
             animate={{ opacity: 0.4 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black backdrop-blur-xs cursor-pointer"
+            className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm cursor-pointer"
           />
 
           {/* Dialog Container */}
@@ -52,16 +52,16 @@ export const Dialog: React.FC<DialogProps> = ({
                 y: '100%', 
                 scale: 0.95 
               }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
               className={`
-                w-full sm:${sizeClasses[size]} bg-card text-card-foreground border-t sm:border border-border/80
-                rounded-t-2xl sm:rounded-2xl shadow-xl flex flex-col max-h-[85vh] sm:max-h-[90vh]
+                w-full sm:${sizeClasses[size]} bg-card text-card-foreground border-t sm:border border-[#E5E7EB]
+                rounded-t-[12px] sm:rounded-[12px] shadow-dialog flex flex-col max-h-[85vh] sm:max-h-[90vh]
               `}
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-5 border-b border-border/40">
+              <div className="flex items-center justify-between p-6 border-b border-[#E5E7EB]">
                 {title ? (
-                  <h3 className="text-lg font-semibold tracking-tight text-foreground">
+                  <h3 className="card-title">
                     {title}
                   </h3>
                 ) : <div />}
@@ -73,8 +73,7 @@ export const Dialog: React.FC<DialogProps> = ({
                 </button>
               </div>
 
-              {/* Scrollable Body */}
-              <div className="p-5 overflow-y-auto flex-1">
+              <div className="p-6 overflow-y-auto flex-1">
                 {children}
               </div>
             </motion.div>

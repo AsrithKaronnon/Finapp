@@ -3,14 +3,17 @@ import { supabase } from '../lib/supabaseClient';
 import { toast } from '../lib/useToastStore';
 import { SEED } from '../lib/supabaseMock';
 import { 
-  Plus, Search, Trash2, Sparkles, Info, FileText, Pencil 
+  Plus, Search, Trash2, Sparkles, FileText, Pencil, Download 
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Dialog } from '../components/ui/Dialog';
+import { getRelativeDateString } from '../lib/utils';
+import { Skeleton } from '../components/ui/Skeleton';
 import { Tabs } from '../components/ui/Tabs';
 
 export const Transactions: React.FC = () => {
+  const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<any[]>([]);
@@ -49,6 +52,7 @@ export const Transactions: React.FC = () => {
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       let [
         { data: txData },
         { data: accData },
@@ -97,6 +101,8 @@ export const Transactions: React.FC = () => {
       if (incCatData) setIncomeCategories(incCatData);
     } catch (err) {
       console.error('Error fetching transactions ledger:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -270,7 +276,7 @@ Input: "${quickAddVal}"`;
       if (error) throw error;
       setQuickAddVal('');
       fetchData();
-      toast.success('Quick entry saved successfully!');
+      toast.success('Quick entry saved');
     } catch (err) {
       toast.error('Error entering spend');
     }
@@ -342,7 +348,7 @@ Input: "${quickAddVal}"`;
     try {
       await supabase.from('transactions').delete().eq('id', id);
       fetchData();
-      toast.success('Transaction deleted successfully');
+      toast.success('Transaction deleted');
     } catch (err) {
       toast.error('Error deleting transaction');
     }
@@ -384,45 +390,29 @@ Input: "${quickAddVal}"`;
   return (
     <div className="flex flex-col gap-6">
       
-      {/* Ledger Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 select-none">
+      {/* HEADER: Title & Actions */}
+      <div className="flex justify-between items-end select-none mb-4 sm:mb-6">
         <div>
-          <h1 className="text-xl font-bold text-foreground">My Spends & Incomes</h1>
-          <p className="text-xs text-muted-foreground">Trace cash logs, view receipts, and record daily transactions.</p>
+          <h1 className="page-title text-foreground">My Spends & Incomes</h1>
+          <p className="secondary-text">Trace cash logs, view receipts, and record daily transactions.</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button onClick={handleExportCSV} variant="outline" size="sm" className="flex-1 sm:flex-initial flex items-center gap-1.5 cursor-pointer text-xs">
-            Download Log
+        <div className="flex gap-2">
+          <Button onClick={handleExportCSV} variant="outline" size="sm" className="flex items-center gap-1.5 cursor-pointer">
+            <Download className="icon-inline" />
+            <span className="hidden sm:inline">Export</span>
           </Button>
-          <Button onClick={handleOpenAdd} size="sm" className="flex-1 sm:flex-initial flex items-center gap-1.5 cursor-pointer text-xs">
-            <Plus className="h-4 w-4" />
-            Add Record
+          <Button 
+            onClick={handleOpenAdd} 
+            size="sm" 
+            className="flex items-center justify-center cursor-pointer h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-1.5 sm:gap-1.5 rounded-full sm:rounded-lg"
+          >
+            <Plus className="icon-inline" />
+            <span className="hidden sm:inline">Log Transaction</span>
           </Button>
         </div>
       </div>
 
-      {/* QUICK ENTRY BOX */}
-      <Card className="border border-primary/20 bg-primary/5 shadow-xs">
-        <CardContent className="p-4">
-          <form onSubmit={handleQuickAdd} className="flex flex-col md:flex-row gap-3 items-center">
-            <div className="flex items-center gap-1.5 text-primary shrink-0 select-none">
-              <Sparkles className="h-4.5 w-4.5" />
-              <span className="text-xs font-bold uppercase tracking-wider">Quick Log</span>
-            </div>
-            <input 
-              id="quick-expense-input"
-              type="text" 
-              placeholder='Type what you bought or earned (e.g. Starbucks 5 or Salary 2500)'
-              value={quickAddVal}
-              onChange={(e) => setQuickAddVal(e.target.value)}
-              className="flex-1 w-full bg-background border border-border/80 px-3 py-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/40"
-            />
-            <Button type="submit" size="sm" loading={quickAddLoading} className="w-full md:w-auto cursor-pointer">
-              Save Entry
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+
 
       {/* FILTER BUTTON TABS */}
       <div className="flex flex-col sm:flex-row gap-3 items-center justify-between select-none">
@@ -454,11 +444,17 @@ Input: "${quickAddVal}"`;
       {/* TRANSACTION FEED LISTINGS */}
       <Card>
         <CardContent className="p-2 space-y-1">
-          {filteredTransactions.length === 0 ? (
-            <div className="py-12 text-center text-xs text-muted-foreground flex flex-col justify-center items-center gap-2 select-none">
-              <Info className="h-8 w-8 text-muted-foreground/60 animate-pulse" />
-              <div className="font-semibold text-foreground">Empty Logs</div>
-              <p>Try logging an item or adjusting filters.</p>
+          {loading ? (
+            <div className="space-y-2 p-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-[60px] w-full skeleton" />
+              ))}
+            </div>
+          ) : filteredTransactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full py-12 text-muted-foreground">
+              <FileText className="h-12 w-12 mb-3 opacity-20" />
+              <p className="text-sm font-medium">No transactions found</p>
+              <p className="text-xs opacity-70 mt-1">Adjust your filters or add a new transaction.</p>
             </div>
           ) : (
             filteredTransactions.map((tx) => {
@@ -470,19 +466,19 @@ Input: "${quickAddVal}"`;
               return (
                 <div 
                   key={tx.id} 
-                  className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border/35 p-3 gap-2 last:border-0 hover:bg-muted/15 rounded-xl transition-colors"
+                  className="group flex flex-col sm:flex-row sm:items-center justify-between border-b border-border/30 py-2.5 px-3 gap-2 last:border-0 hover:bg-[#F8F8F8] dark:hover:bg-white/5 rounded-lg transition-colors"
                 >
                   {/* Left block description */}
-                  <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
-                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs select-none shrink-0 ${isIncome ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/10 text-primary'}`}>
+                  <div className="flex items-center gap-3 min-w-0 w-full sm:flex-1">
+                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center font-bold text-[11px] select-none shrink-0 ${isIncome ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/10 text-primary'}`}>
                       {isIncome ? 'I' : 'S'}
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-bold text-foreground truncate">{tx.merchant}</span>
-                      <span className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                        {tx.date} • {catName}
+                      <span className="text-[13px] font-extrabold text-foreground truncate leading-tight">{tx.merchant}</span>
+                      <span className="text-[10px] text-muted-foreground/70 font-light mt-0.5 truncate leading-none">
+                        {getRelativeDateString(tx.date)} • {catName}
                         {tx.is_recurring && (
-                          <span className="ml-1.5 text-primary bg-primary/10 px-1 py-0.2 rounded text-[8px] font-extrabold uppercase">
+                          <span className="ml-1.5 text-primary/60 bg-primary/10 px-1 py-0.5 rounded text-[8px] font-medium uppercase">
                             {tx.recurrence_interval}
                           </span>
                         )}
@@ -491,31 +487,31 @@ Input: "${quickAddVal}"`;
                   </div>
 
                   {/* Right block amount & actions */}
-                  <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto border-t border-border/10 sm:border-none pt-2 sm:pt-0 shrink-0">
-                    <span className={`text-sm font-mono font-bold ${isIncome ? 'text-emerald-500' : 'text-foreground'}`}>
-                      {isIncome ? '+' : '-'}{currencySymbol}{(parseFloat(tx.amount) || 0).toFixed(2)}
+                  <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-2 sm:pt-0 shrink-0 border-t border-border/10 sm:border-none">
+                    <span className={`text-[13px] font-mono font-bold text-right sm:w-[100px] ${isIncome ? 'text-emerald-500/90' : 'text-foreground/75 dark:text-gray-300'}`}>
+                      {isIncome ? '+' : '-'}{currencySymbol}{(parseFloat(tx.amount) || 0).toFixed(0)}
                     </span>
-                    <div className="flex items-center gap-1 font-sans">
-                      <button
+                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
                         onClick={() => setSelectedTxForReceipt(tx)}
-                        title="View Receipt"
-                        className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                        aria-label="View Receipt"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:bg-[#F8F8F8] hover:text-foreground dark:hover:bg-white/10 transition-colors cursor-pointer"
                       >
                         <FileText className="h-4 w-4" />
                       </button>
-                      <button
+                      <button 
                         onClick={() => handleOpenEdit(tx)}
-                        title="Edit Entry"
-                        className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                        aria-label="Edit Transaction"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:bg-[#F8F8F8] hover:text-primary dark:hover:bg-white/10 transition-colors cursor-pointer"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button
+                      <button 
                         onClick={() => handleDelete(tx.id)}
-                        title="Delete Entry"
-                        className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
+                        aria-label="Delete Transaction"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:bg-[#F8F8F8] hover:text-destructive dark:hover:bg-white/10 transition-colors cursor-pointer"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-[16px] w-[16px]" />
                       </button>
                     </div>
                   </div>
@@ -680,11 +676,11 @@ Input: "${quickAddVal}"`;
           <div className="w-full border-t border-b border-border/30 py-3 mt-4 space-y-2 text-[10px] font-mono">
             <div className="flex justify-between">
               <span>Item: {selectedTxForReceipt?.merchant || 'General Entry'}</span>
-              <span>{currencySymbol}{(parseFloat(selectedTxForReceipt?.amount) || 0).toFixed(2)}</span>
+              <span>{currencySymbol}{(parseFloat(selectedTxForReceipt?.amount) || 0).toFixed(0)}</span>
             </div>
             <div className="flex justify-between border-t border-border/20 pt-2 font-bold text-foreground">
               <span>TOTAL</span>
-              <span>{currencySymbol}{(parseFloat(selectedTxForReceipt?.amount) || 0).toFixed(2)}</span>
+              <span>{currencySymbol}{(parseFloat(selectedTxForReceipt?.amount) || 0).toFixed(0)}</span>
             </div>
           </div>
           <p className="text-[9px] text-muted-foreground text-center italic mt-2">
@@ -692,6 +688,31 @@ Input: "${quickAddVal}"`;
           </p>
         </div>
       </Dialog>
+
+      {/* QUICK ENTRY BOX (Moved to bottom) */}
+      <div className="mt-8">
+        <Card className="border border-primary/20 bg-primary/5 shadow-xs">
+          <CardContent className="p-6">
+            <form onSubmit={handleQuickAdd} className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="flex items-center gap-2 text-primary shrink-0 select-none">
+                <Sparkles className="icon-card" />
+                <span className="label-text text-primary">Quick Log</span>
+              </div>
+              <input 
+                id="quick-expense-input"
+                type="text" 
+                placeholder='Type what you bought or earned (e.g. Starbucks 5 or Salary 2500)'
+                value={quickAddVal}
+                onChange={(e) => setQuickAddVal(e.target.value)}
+                className="flex-1 w-full bg-background px-3 py-2 rounded-xl text-sm outline-none"
+              />
+              <Button type="submit" size="md" loading={quickAddLoading} className="w-full md:w-auto cursor-pointer">
+                Save Entry
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
 
     </div>
   );

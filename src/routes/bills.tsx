@@ -10,6 +10,8 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Dialog } from '../components/ui/Dialog';
 import { Tabs } from '../components/ui/Tabs';
+import { getRelativeDateString } from '../lib/utils';
+import { Skeleton } from '../components/ui/Skeleton';
 
 export const Bills: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -132,11 +134,11 @@ export const Bills: React.FC = () => {
       if (editingId) {
         const { error } = await supabase.from('bills').update(payload).eq('id', editingId);
         if (error) throw error;
-        toast.success('Bill updated successfully!');
+        toast.success('Bill updated');
       } else {
         const { error } = await supabase.from('bills').insert([payload]);
         if (error) throw error;
-        toast.success('Bill saved successfully!');
+        toast.success('Bill saved');
       }
       setIsModalOpen(false);
       setEditingId(null);
@@ -165,7 +167,7 @@ export const Bills: React.FC = () => {
     try {
       await supabase.from('bills').delete().eq('id', id);
       fetchData();
-      toast.success('Bill deleted successfully');
+      toast.success('Bill deleted');
     } catch (err) {
       toast.error('Error deleting bill');
     }
@@ -224,7 +226,7 @@ export const Bills: React.FC = () => {
 
       setPayingItem(null);
       fetchData();
-      toast.success('Payment recorded successfully');
+      toast.success('Payment recorded');
     } catch (err) {
       toast.error('Error updating payment status');
     }
@@ -265,7 +267,7 @@ export const Bills: React.FC = () => {
         is_loan: true,
         outstanding_amount: l.outstanding_amount,
         remaining_emis: l.remaining_emis,
-        notes: `Outstanding: ${currencySymbol}${l.outstanding_amount.toLocaleString()} (${l.remaining_emis} left)`
+        notes: `Outstanding: ${currencySymbol}${l.outstanding_amount.toLocaleString('en-US', { maximumFractionDigits: 0 })} (${l.remaining_emis} left)`
       });
     }
   });
@@ -285,20 +287,24 @@ export const Bills: React.FC = () => {
   return (
     <div className="flex flex-col gap-6">
       
-      {/* Title block */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 select-none">
+      {/* HEADER: Title & Actions */}
+      <div className="flex justify-between items-end select-none mb-4 sm:mb-6">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Bills & Loans Due</h1>
-          <p className="text-xs text-muted-foreground">Log utilities, subscriptions, and active debt EMI repayments.</p>
+          <h1 className="page-title text-foreground">Bills & Loans Due</h1>
+          <p className="secondary-text">Log utilities, subscriptions, and active debt EMI repayments.</p>
         </div>
-        <Button onClick={handleOpenAdd} size="sm" className="flex items-center gap-1.5 cursor-pointer text-xs">
-          <Plus className="h-4 w-4" />
-          Log a Bill
+        <Button 
+          onClick={handleOpenAdd} 
+          size="sm" 
+          className="flex items-center justify-center cursor-pointer h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-1.5 sm:gap-1.5 rounded-full sm:rounded-lg"
+        >
+          <Plus className="icon-inline" />
+          <span className="hidden sm:inline">Add Bill</span>
         </Button>
       </div>
 
       {/* FILTER TABS */}
-      <div className="w-full sm:w-64 select-none">
+      <div className="w-full sm:w-64 select-none mb-3">
         <Tabs
           options={[
             { id: 'upcoming', label: 'Upcoming Bills' },
@@ -311,15 +317,16 @@ export const Bills: React.FC = () => {
 
       {/* BILL LISTINGS */}
       {loading ? (
-        <div className="space-y-4">
-          <div className="h-20 animate-pulse bg-card rounded-xl border border-border/50" />
-          <div className="h-20 animate-pulse bg-card rounded-xl border border-border/50" />
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} className="h-[72px] w-full skeleton" />
+          ))}
         </div>
       ) : filteredPayments.length === 0 ? (
-        <div className="py-16 text-center border border-dashed border-border rounded-2xl flex flex-col justify-center items-center gap-3 select-none">
-          <AlertCircle className="h-10 w-10 text-muted-foreground/60 animate-bounce" />
-          <div className="text-xs font-semibold text-foreground">All Caught Up!</div>
-          <p className="text-[11px] text-muted-foreground">No upcoming bills to display.</p>
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground border border-dashed border-border/50 rounded-xl">
+          <AlertCircle className="h-12 w-12 mb-3 opacity-20" />
+          <p className="text-sm font-medium text-foreground">All Caught Up!</p>
+          <p className="text-xs opacity-70 mt-1">No upcoming bills to display.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -335,9 +342,9 @@ export const Bills: React.FC = () => {
                       {p.is_loan ? 'L' : 'B'}
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-bold text-foreground truncate">{p.name}</span>
-                      <span className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                        Due: {p.due_date} • {p.notes}
+                      <span className="body-text font-medium text-foreground truncate">{p.name}</span>
+                      <span className="secondary-text mt-1 truncate">
+                        Due: {getRelativeDateString(p.due_date)} • {p.notes}
                       </span>
                     </div>
                   </div>
@@ -357,7 +364,7 @@ export const Bills: React.FC = () => {
                       </button>
                     )}
                     <span className="text-sm font-mono font-bold text-foreground">
-                      {currencySymbol}{(parseFloat(p.amount) || 0).toFixed(2)}
+                      {currencySymbol}{(parseFloat(p.amount) || 0).toFixed(0)}
                     </span>
                     {!isPaid ? (
                       <Button
@@ -374,18 +381,18 @@ export const Bills: React.FC = () => {
                       </Badge>
                     )}
                     {!p.is_loan && (
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleEdit(p)}
-                          className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
-                          title="Edit bill log"
+                          aria-label="Edit Bill"
+                          className="p-1.5 rounded-lg text-muted-foreground hover:bg-[#F8F8F8] hover:text-primary dark:hover:bg-white/10 transition-colors cursor-pointer"
                         >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(p.id, p.is_loan)}
-                          className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
-                          title="Delete bill log"
+                          aria-label="Delete Bill"
+                          className="p-1.5 rounded-lg text-muted-foreground hover:bg-[#F8F8F8] hover:text-destructive dark:hover:bg-white/10 transition-colors cursor-pointer"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -525,7 +532,7 @@ export const Bills: React.FC = () => {
 
           <div className="flex justify-between items-center text-xs font-bold text-foreground border-b border-border/40 pb-3">
             <span>Bill Amount:</span>
-            <span className="font-mono text-base">{currencySymbol}{payingItem ? (parseFloat(payingItem.amount) || 0).toFixed(2) : '0.00'}</span>
+            <span className="font-mono text-base">{currencySymbol}{payingItem ? (parseFloat(payingItem.amount) || 0).toFixed(0) : '0'}</span>
           </div>
 
           {payingItem?.is_loan && (
@@ -536,7 +543,7 @@ export const Bills: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span>Outstanding debt balance:</span>
-                <span>{currencySymbol}{((parseFloat(payingItem.outstanding_amount) || 0) - (parseFloat(payingItem.amount) || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                <span>{currencySymbol}{((parseFloat(payingItem.outstanding_amount) || 0) - (parseFloat(payingItem.amount) || 0)).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
               </div>
             </div>
           )}

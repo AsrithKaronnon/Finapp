@@ -46,6 +46,8 @@ export const SEED = {
     transport: 'e0000000-0000-0000-0000-000000000004',
     entertainment: 'e0000000-0000-0000-0000-000000000005',
     shopping: 'e0000000-0000-0000-0000-000000000006',
+    health: 'e0000000-0000-0000-0000-000000000007',
+    travel: 'e0000000-0000-0000-0000-000000000008',
   },
   income_categories: {
     salary: 'i0000000-0000-0000-0000-000000000001',
@@ -245,12 +247,14 @@ export function initializeMockDatabase() {
 
   // Master: Expense Categories
   seedTable('expense_categories', [
-    { id: SEED.expense_categories.food, name: 'Food & Dining', icon: 'Utensils', color: 'emerald' },
-    { id: SEED.expense_categories.utilities, name: 'Bills & Utilities', icon: 'Zap', color: 'amber' },
-    { id: SEED.expense_categories.housing, name: 'Housing & Rent', icon: 'Home', color: 'blue' },
-    { id: SEED.expense_categories.transport, name: 'Transportation', icon: 'Car', color: 'sky' },
-    { id: SEED.expense_categories.entertainment, name: 'Entertainment', icon: 'Tv', color: 'violet' },
-    { id: SEED.expense_categories.shopping, name: 'Shopping', icon: 'ShoppingBag', color: 'rose' },
+    { id: SEED.expense_categories.food, name: 'Food & Dining', icon: 'Utensils', color: 'emerald', is_system: true },
+    { id: SEED.expense_categories.utilities, name: 'Bills & Utilities', icon: 'Zap', color: 'amber', is_system: true },
+    { id: SEED.expense_categories.housing, name: 'Housing & Rent', icon: 'Home', color: 'blue', is_system: true },
+    { id: SEED.expense_categories.transport, name: 'Auto & Transport', icon: 'Car', color: 'cyan', is_system: true },
+    { id: SEED.expense_categories.shopping, name: 'Shopping', icon: 'ShoppingBag', color: 'fuchsia', is_system: true },
+    { id: SEED.expense_categories.entertainment, name: 'Entertainment', icon: 'Tv', color: 'purple', is_system: true },
+    { id: SEED.expense_categories.health, name: 'Health & Fitness', icon: 'Activity', color: 'rose', is_system: true },
+    { id: SEED.expense_categories.travel, name: 'Travel', icon: 'Plane', color: 'sky', is_system: true },
   ]);
 
   // Master: Expense Subcategories
@@ -387,11 +391,11 @@ export function initializeMockDatabase() {
 
   // User Data: Budgets
   seedTable('budgets', [
-    { category_id: SEED.expense_categories.food, amount: 600.00, budget_type_id: SEED.recurrences.monthly },
-    { category_id: SEED.expense_categories.utilities, amount: 250.00, budget_type_id: SEED.recurrences.monthly },
-    { category_id: SEED.expense_categories.entertainment, amount: 150.00, budget_type_id: SEED.recurrences.monthly },
-    { category_id: SEED.expense_categories.shopping, amount: 500.00, budget_type_id: SEED.recurrences.monthly },
-    { category_id: SEED.expense_categories.transport, amount: 200.00, budget_type_id: SEED.recurrences.monthly },
+    { category_id: SEED.expense_categories.food, amount: 600.00, budget_type_id: SEED.recurrences.monthly, sort_order: 1 },
+    { category_id: SEED.expense_categories.utilities, amount: 250.00, budget_type_id: SEED.recurrences.monthly, sort_order: 2 },
+    { category_id: SEED.expense_categories.entertainment, amount: 150.00, budget_type_id: SEED.recurrences.monthly, sort_order: 3 },
+    { category_id: SEED.expense_categories.shopping, amount: 500.00, budget_type_id: SEED.recurrences.monthly, sort_order: 4 },
+    { category_id: SEED.expense_categories.transport, amount: 200.00, budget_type_id: SEED.recurrences.monthly, sort_order: 5 },
   ]);
 
   // User Data: Goals
@@ -494,11 +498,13 @@ export function initializeMockDatabase() {
     { title: 'Budget Warning', message: 'You have spent 92% of your Food & Dining budget for this month.', notification_type_id: 'budget-warning', is_read: false }
   ]);
 
-  // Default settings
+  // User Data: Settings
   seedTable('user_settings', [
     {
-      theme: 'system',
-      base_currency_id: SEED.currencies.usd,
+      id: 's0000000-0000-0000-0000-000000000001',
+      user_id: 'u0000000-0000-0000-0000-000000000001',
+      base_currency_id: SEED.currencies.inr,
+      theme_preference: 'system',
       dashboard_layout: [
         { id: 'cash-flow', w: 'large', pinned: true },
         { id: 'recent-transactions', w: 'medium', pinned: true },

@@ -297,7 +297,7 @@ export const CalendarView: React.FC = () => {
                     <div key={item.id} className="flex flex-col gap-1 border-b border-border/30 pb-3 last:border-0 last:pb-0">
                       <div className="flex justify-between items-center font-bold text-foreground">
                         <span>{item.name}</span>
-                        <span className="font-mono">${item.amount.toFixed(2)}</span>
+                        <span className="font-mono">${item.amount.toFixed(0)}</span>
                       </div>
                       <div className="flex justify-between items-center text-[10px] text-muted-foreground mt-0.5">
                         <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-amber-500" /> Due: {item.due_date}</span>

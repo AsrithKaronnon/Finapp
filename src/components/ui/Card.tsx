@@ -16,8 +16,8 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(({
     <div
       ref={ref}
       className={`
-        rounded-xl border border-border/60 bg-card text-card-foreground shadow-sm overflow-hidden
-        ${hoverEffect ? 'transition-all duration-300 hover:shadow-md hover:border-border/100 hover:translate-y-[-2px]' : ''}
+        rounded-[12px] border border-border bg-card text-card-foreground shadow-card overflow-hidden
+        transition-all duration-150 ease-in-out hover:bg-muted/10 hover:-translate-y-[1px] hover:shadow-md
         ${glass ? 'glass' : ''}
         ${className}
       `}
@@ -31,13 +31,13 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(({
 Card.displayName = 'Card';
 
 export const CardHeader = ({ children, className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={`p-5 flex flex-col gap-1 border-b border-border/40 ${className}`} {...props}>
+  <div className={`p-4 sm:p-6 flex flex-col gap-1 border-b border-border ${className}`} {...props}>
     {children}
   </div>
 );
 
 export const CardTitle = ({ children, className = '', ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-  <h3 className={`text-lg font-semibold tracking-tight text-foreground ${className}`} {...props}>
+  <h3 className={`card-title ${className}`} {...props}>
     {children}
   </h3>
 );
@@ -49,13 +49,13 @@ export const CardDescription = ({ children, className = '', ...props }: React.HT
 );
 
 export const CardContent = ({ children, className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={`p-5 ${className}`} {...props}>
+  <div className={`p-4 sm:p-6 ${className}`} {...props}>
     {children}
   </div>
 );
 
 export const CardFooter = ({ children, className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={`p-5 bg-muted/20 border-t border-border/40 flex items-center justify-between ${className}`} {...props}>
+  <div className={`p-4 sm:p-6 bg-muted/20 border-t border-border flex items-center justify-between ${className}`} {...props}>
     {children}
   </div>
 );

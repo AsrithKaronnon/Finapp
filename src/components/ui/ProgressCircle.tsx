@@ -12,7 +12,7 @@ interface ProgressCircleProps {
 export const ProgressCircle: React.FC<ProgressCircleProps> = ({
   value,
   size = 64,
-  strokeWidth = 6,
+  strokeWidth = 4,
   className = '',
   children
 }) => {

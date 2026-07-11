@@ -84,7 +84,7 @@ export const Investments: React.FC = () => {
       if (error) throw error;
       setIsModalOpen(false);
       fetchInvestments();
-      toast.success('Asset logged successfully!');
+      toast.success('Asset logged');
     } catch (err) {
       toast.error('Error logging investment asset');
     }
@@ -95,7 +95,7 @@ export const Investments: React.FC = () => {
     try {
       await supabase.from('investments').delete().eq('id', id);
       fetchInvestments();
-      toast.success('Asset removed successfully');
+      toast.success('Asset removed');
     } catch (err) {
       toast.error('Error deleting asset');
     }
@@ -151,7 +151,7 @@ export const Investments: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Invested Principal</span>
-              <span className="text-xl font-bold text-foreground">{currencySymbol}{totalInvested.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span className="text-xl font-bold text-foreground">{currencySymbol}{totalInvested.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
             </div>
           </CardContent>
         </Card>
@@ -160,7 +160,7 @@ export const Investments: React.FC = () => {
           <CardContent className="p-5 flex justify-between items-center">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Current Market Value</span>
-              <span className="text-xl font-bold text-foreground">{currencySymbol}{currentValuation.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              <span className="text-xl font-bold text-foreground">{currencySymbol}{currentValuation.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
             </div>
           </CardContent>
         </Card>
@@ -171,7 +171,7 @@ export const Investments: React.FC = () => {
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Absolute Returns (P&L)</span>
               <span className={`text-xl font-bold flex items-center gap-1 ${totalReturns >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {totalReturns >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
-                {currencySymbol}{Math.abs(totalReturns).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {currencySymbol}{Math.abs(totalReturns).toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </span>
             </div>
           </CardContent>
@@ -263,11 +263,11 @@ export const Investments: React.FC = () => {
                           <tr key={inv.id} className="border-b border-border/30 hover:bg-muted/10">
                             <td className="p-3 pl-5 font-semibold text-foreground">{inv.name}</td>
                             <td className="p-3"><Badge variant="primary" className="text-[9px]">{type}</Badge></td>
-                            <td className="p-3 text-right font-mono font-medium">{currencySymbol}{inv.total_invested.toLocaleString()}</td>
-                            <td className="p-3 text-right font-mono font-bold">{currencySymbol}{inv.current_value.toLocaleString()}</td>
+                            <td className="p-3 text-right font-mono font-medium">{currencySymbol}{inv.total_invested.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
+                            <td className="p-3 text-right font-mono font-bold">{currencySymbol}{inv.current_value.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
                             <td className="p-3 text-right font-mono">
                               <span className={`font-semibold ${gain >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                {gain >= 0 ? '+' : ''}{currencySymbol}{gain.toLocaleString()} ({gainPct.toFixed(1)}%)
+                                {gain >= 0 ? '+' : ''}{currencySymbol}{gain.toLocaleString('en-US', { maximumFractionDigits: 0 })} ({gainPct.toFixed(1)}%)
                               </span>
                             </td>
                             <td className="p-3 text-center font-bold text-muted-foreground">{weight}%</td>

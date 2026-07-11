@@ -4,7 +4,7 @@ import { toast } from '../lib/useToastStore';
 import { SEED } from '../lib/supabaseMock';
 import { useNavigate } from '@tanstack/react-router';
 import { 
-  ArrowUpRight, Sparkles, Wallet, Calendar, Plus, TrendingUp, Settings
+  Sparkles, Wallet, Calendar, Plus, TrendingUp, Settings, CreditCard
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -336,7 +336,7 @@ Input: "${quickAddVal}"`;
       if (error) throw error;
       setQuickAddVal('');
       fetchData();
-      toast.success('Quick entry saved successfully!');
+      toast.success('Quick entry saved');
     } catch (err) {
       toast.error('Error entering spend');
     }
@@ -370,7 +370,7 @@ Input: "${quickAddVal}"`;
 
       setPayingBill(null);
       fetchData();
-      toast.success('Payment recorded successfully');
+      toast.success('Payment recorded');
     } catch (err) {
       toast.error('Error updating payment');
     }
@@ -475,56 +475,67 @@ Input: "${quickAddVal}"`;
   return (
     <div className="flex flex-col gap-6">
       
+      {/* HEADER: Title & Customizer */}
+      <div className="flex justify-between items-end select-none mb-4 sm:mb-6">
+        <div>
+          <h1 className="page-title text-foreground">Home Dashboard</h1>
+          <p className="secondary-text">Welcome to your personal financial control center.</p>
+        </div>
+        <Button 
+          onClick={() => setIsCustomizeOpen(true)} 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center justify-center cursor-pointer h-10 w-10 p-0 sm:w-auto sm:px-3 sm:py-1.5 sm:gap-1.5 rounded-full sm:rounded-lg"
+        >
+          <Settings className="icon-inline" />
+          <span className="hidden sm:inline">Customize</span>
+        </Button>
+      </div>
+
       {/* TOP STANDING STATS CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 select-none">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 select-none mb-6">
         
         {/* Total Available cash */}
-        <Card className="border border-primary/20 bg-primary/5">
-          <CardContent className="p-5 flex justify-between items-center">
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">My Total Money</span>
-              <span className="text-2xl font-bold text-foreground">
-                {currencySymbol}{totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-              <span className="text-[10px] text-muted-foreground">Checking & savings balances</span>
+        <Card className="col-span-2 sm:col-span-1 h-[90px] sm:h-[100px] border-border/80 bg-card hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 relative overflow-hidden">
+          <CardContent className="p-3 sm:p-4 h-full flex flex-col justify-between">
+            <span className="text-[12px] font-medium text-muted-foreground/80 uppercase tracking-wider">Balance</span>
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+              <Wallet className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
             </div>
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-              <Wallet className="h-5 w-5" />
+            <div className="flex flex-col">
+              <span className="text-[32px] sm:text-[38px] font-bold text-foreground leading-none tracking-tight">
+                {currencySymbol}{totalBalance.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              </span>
             </div>
           </CardContent>
         </Card>
 
         {/* Spent this month */}
-        <Card>
-          <CardContent className="p-5 flex justify-between items-center">
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Spent This Month</span>
-              <span className="text-2xl font-bold text-foreground">
-                {currencySymbol}{monthlyExpense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                Limit: {currencySymbol}{totalBudgeted.toLocaleString()}
+        <Card className="h-[90px] sm:h-[100px] border-border/80 bg-card hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 relative overflow-hidden">
+          <CardContent className="p-3 sm:p-4 h-full flex flex-col justify-between">
+            <span className="text-[12px] font-medium text-muted-foreground/80 uppercase tracking-wider">Spent</span>
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center justify-center">
+              <ProgressCircle value={budgetPct} size={32} strokeWidth={3}>
+                <span className="text-[8px] font-bold text-foreground">{budgetPct}%</span>
+              </ProgressCircle>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[32px] sm:text-[38px] font-bold text-foreground leading-none tracking-tight">
+                {currencySymbol}{monthlyExpense.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </span>
             </div>
-            <ProgressCircle value={budgetPct} size={42} strokeWidth={4}>
-              <span className="text-[9px] font-bold text-foreground">{budgetPct}%</span>
-            </ProgressCircle>
           </CardContent>
         </Card>
 
         {/* Savings progress indicator */}
-        <Card>
-          <CardContent className="p-5 flex justify-between items-center">
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Monthly Savings Rate</span>
-              <span className="text-2xl font-bold text-foreground">{savingsRate}%</span>
-              <span className="text-[10px] text-emerald-500 font-semibold flex items-center gap-0.5">
-                <ArrowUpRight className="h-3.5 w-3.5" />
-                Target is 20%+
-              </span>
+        <Card className="h-[90px] sm:h-[100px] border-border/80 bg-card hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 relative overflow-hidden">
+          <CardContent className="p-3 sm:p-4 h-full flex flex-col justify-between">
+            <span className="text-[12px] font-medium text-muted-foreground/80 uppercase tracking-wider">Saved</span>
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-emerald-500/5 flex items-center justify-center text-emerald-500">
+              <TrendingUp className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
             </div>
-            <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
-              <TrendingUp className="h-5 w-5" />
+            <div className="flex flex-col">
+              <span className="text-[32px] sm:text-[38px] font-bold text-foreground leading-none tracking-tight">{savingsRate}%</span>
             </div>
           </CardContent>
         </Card>
@@ -532,44 +543,7 @@ Input: "${quickAddVal}"`;
       </div>
 
       {/* QUICK LOG CARD */}
-      <Card className="border border-primary/20 bg-primary/5 shadow-xs">
-        <CardContent className="p-4">
-          <form onSubmit={handleQuickAdd} className="flex flex-col md:flex-row gap-3 items-center">
-            <div className="flex items-center gap-1.5 text-primary shrink-0 select-none">
-              <Sparkles className="h-4.5 w-4.5" />
-              <span className="text-xs font-bold uppercase tracking-wider">Quick Log</span>
-            </div>
-            <input 
-              id="quick-expense-input"
-              type="text" 
-              placeholder='Type what you bought or earned (e.g. Starbucks 5 or Salary 2500)'
-              value={quickAddVal}
-              onChange={(e) => setQuickAddVal(e.target.value)}
-              className="flex-1 w-full bg-background border border-border/80 px-3 py-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/40"
-            />
-            <Button type="submit" size="sm" loading={quickAddLoading} className="w-full md:w-auto cursor-pointer">
-              Save Entry
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
 
-      {/* Title & Customizer Trigger */}
-      <div className="flex justify-between items-center select-none mt-2">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Home Dashboard</h1>
-          <p className="text-xs text-muted-foreground">Welcome to your personal financial control center.</p>
-        </div>
-        <Button 
-          onClick={() => setIsCustomizeOpen(true)} 
-          variant="outline" 
-          size="sm" 
-          className="text-xs py-1.5 px-3 flex items-center gap-1.5 cursor-pointer"
-        >
-          <Settings className="h-4 w-4" />
-          Customize Screen
-        </Button>
-      </div>
 
       {/* DASHBOARD SPLIT GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -579,26 +553,35 @@ Input: "${quickAddVal}"`;
           
           {/* Visual balance trend */}
           {activeWidgets.includes('standard') && (
-            <Card>
-              <CardContent className="p-5">
-                <div className="mb-4">
-                  <h3 className="text-sm font-bold text-foreground">My Balance Trend</h3>
-                  <p className="text-xs text-muted-foreground">Your financial trajectory over the last six months</p>
+            <Card className="rounded-2xl">
+              <CardContent className="p-6">
+                <div className="mb-6">
+                  <h3 className="text-[20px] font-semibold text-foreground">My Balance Trend</h3>
+                  <p className="text-[11px] text-muted-foreground/70 font-light mt-1">Your financial trajectory over the last six months</p>
                 </div>
-                <div className="h-[220px] w-full">
+                <div className="h-[150px] lg:h-[160px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={trendData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                    <AreaChart data={trendData} margin={{ top: 5, right: 0, left: -30, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorMoney" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
                           <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" fontSize={11} stroke="hsl(var(--muted-foreground))" tickLine={false} />
-                      <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" tickLine={false} />
-                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }} />
-                      <Area type="monotone" dataKey="Money" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorMoney)" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.4} />
+                      <XAxis dataKey="name" fontSize={11} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} dy={5} />
+                      <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} dx={-5} />
+                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="Money" 
+                        stroke="#6366f1" 
+                        strokeWidth={3} 
+                        fillOpacity={1} 
+                        fill="url(#colorMoney)"
+                        activeDot={{ r: 6, strokeWidth: 0 }}
+                        dot={(props: any) => props.index === trendData.length - 1 ? <circle cx={props.cx} cy={props.cy} r={5} fill="#6366f1" stroke="hsl(var(--card))" strokeWidth={2} key="last-dot" /> : null}
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -631,8 +614,8 @@ Input: "${quickAddVal}"`;
                         <div key={idx} className="space-y-1.5">
                           <div className="flex justify-between text-xs font-semibold select-none">
                             <span className="text-foreground">{item.name}</span>
-                            <span className="text-muted-foreground">
-                              {currencySymbol}{item.amount.toFixed(2)} ({pct}%)
+                            <span className="font-mono text-sm font-semibold">
+                              {currencySymbol}{item.amount.toFixed(0)} ({pct}%)
                             </span>
                           </div>
                           <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
@@ -666,14 +649,14 @@ Input: "${quickAddVal}"`;
                   <div className="grid grid-cols-2 gap-4 text-center select-none">
                     <div className="p-3 bg-muted/30 rounded-xl border border-border/30">
                       <span className="text-[8px] font-bold text-muted-foreground uppercase">Spent Today</span>
-                      <div className="text-lg font-bold text-foreground mt-1">
-                        {currencySymbol}{spentToday.toFixed(2)}
+                      <div className="flex items-center gap-1.5 text-rose-500 font-mono">
+                        {currencySymbol}{spentToday.toFixed(0)}
                       </div>
                     </div>
                     <div className="p-3 bg-muted/30 rounded-xl border border-border/30">
                       <span className="text-[8px] font-bold text-muted-foreground uppercase">Daily Average</span>
-                      <div className="text-lg font-bold text-muted-foreground mt-1">
-                        {currencySymbol}{dailyAverage.toFixed(2)}
+                      <div className="flex items-center gap-1.5 text-muted-foreground font-mono">
+                        {currencySymbol}{dailyAverage.toFixed(0)}
                       </div>
                     </div>
                   </div>
@@ -710,18 +693,18 @@ Input: "${quickAddVal}"`;
                 </div>
 
                 <div className="space-y-3.5">
-                  <div className="flex justify-between items-center text-xs border-b border-border/30 pb-2">
-                    <span className="text-muted-foreground font-semibold">Total Monthly Earnings</span>
-                    <span className="font-bold text-emerald-500 font-mono">+{currencySymbol}{monthlyIncome.toFixed(2)}</span>
+                  <div className="flex justify-between items-center text-sm py-1">
+                    <span className="text-muted-foreground">Inflows</span>
+                    <span className="font-bold text-emerald-500 font-mono">+{currencySymbol}{monthlyIncome.toFixed(0)}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs border-b border-border/30 pb-2">
-                    <span className="text-muted-foreground font-semibold">Total Monthly Expenditures</span>
-                    <span className="font-bold text-rose-500 font-mono">-{currencySymbol}{monthlyExpense.toFixed(2)}</span>
+                  <div className="flex justify-between items-center text-sm py-1">
+                    <span className="text-muted-foreground">Outflows</span>
+                    <span className="font-bold text-rose-500 font-mono">-{currencySymbol}{monthlyExpense.toFixed(0)}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs pt-1">
-                    <span className="text-foreground font-bold">Net Saved Cash Flow</span>
-                    <span className={`font-mono font-bold ${(monthlyIncome - monthlyExpense) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {(monthlyIncome - monthlyExpense) >= 0 ? '+' : ''}{currencySymbol}{(monthlyIncome - monthlyExpense).toFixed(2)}
+                  <div className="flex justify-between items-center text-sm py-2 mt-1 border-t border-border font-bold">
+                    <span>Net Change</span>
+                    <span className={(monthlyIncome - monthlyExpense) >= 0 ? "text-emerald-500 font-mono" : "text-rose-500 font-mono"}>
+                      {(monthlyIncome - monthlyExpense) >= 0 ? '+' : ''}{currencySymbol}{(monthlyIncome - monthlyExpense).toFixed(0)}
                     </span>
                   </div>
                 </div>
@@ -849,25 +832,46 @@ Input: "${quickAddVal}"`;
                   <p className="text-[11px] text-muted-foreground">Log payments before they are past due</p>
                 </div>
 
-                <div className="space-y-3">
-                  {bills.filter(b => b.status_id !== SEED.statuses.paid && b.is_active !== false).slice(0, 3).map((bill) => (
-                    <div key={bill.id} className="flex justify-between items-center border-b border-border/30 pb-3 last:border-0 last:pb-0">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-foreground">{bill.name}</span>
-                        <span className="text-[10px] text-muted-foreground">Due Date: {bill.due_date}</span>
+                <div className="flex flex-col gap-0.5">
+                  {bills.filter(b => b.status_id !== SEED.statuses.paid && b.is_active !== false).slice(0, 3).map((bill) => {
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    const due = new Date(bill.due_date);
+                    due.setHours(0,0,0,0);
+                    const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    
+                    let relText = `In ${diffDays} days`;
+                    let dotColor = 'bg-emerald-500';
+                    if (diffDays < 0) { relText = 'Overdue'; dotColor = 'bg-rose-500'; }
+                    else if (diffDays === 0) { relText = 'Today'; dotColor = 'bg-amber-500'; }
+                    else if (diffDays === 1) { relText = 'Tomorrow'; dotColor = 'bg-amber-500'; }
+                    else if (diffDays <= 7) { dotColor = 'bg-amber-500'; }
+
+                    return (
+                      <div key={bill.id} className="group flex justify-between items-center p-2 rounded-lg hover:bg-[#F8F8F8] dark:hover:bg-white/5 transition-colors">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotColor}`} />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[13px] font-bold text-foreground truncate leading-tight">{bill.name}</span>
+                            <span className="text-[10px] text-muted-foreground/70 font-light mt-0.5 truncate leading-none">
+                              {relText}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-[13px] font-mono font-bold text-right w-[60px]">{currencySymbol}{(parseFloat(bill.amount) || 0).toFixed(0)}</span>
+                          <Button
+                            onClick={() => setPayingBill(bill)}
+                            size="sm"
+                            className="h-[24px] w-[24px] p-0 sm:w-auto sm:px-2.5 cursor-pointer flex items-center justify-center rounded-md"
+                          >
+                            <span className="hidden sm:inline text-[10px] font-semibold">Pay</span>
+                            <CreditCard className="h-3 w-3 sm:hidden" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold">{currencySymbol}{(parseFloat(bill.amount) || 0).toFixed(2)}</span>
-                        <Button
-                          onClick={() => setPayingBill(bill)}
-                          size="sm"
-                          className="py-1 px-2.5 text-[9px] cursor-pointer"
-                        >
-                          Pay
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -902,9 +906,9 @@ Input: "${quickAddVal}"`;
                               {merchant.count} transaction{merchant.count === 1 ? '' : 's'} ({pct}%)
                             </span>
                           </div>
-                          <span className="font-mono font-bold text-rose-500">
-                            {currencySymbol}{merchant.amount.toFixed(2)}
-                          </span>
+                          <div className="font-mono font-bold text-foreground">
+                            {currencySymbol}{merchant.amount.toFixed(0)}
+                          </div>
                         </div>
                       );
                     })}
@@ -930,7 +934,31 @@ Input: "${quickAddVal}"`;
           </Card>
 
         </div>
+      </div>
 
+      {/* QUICK LOG CARD (Moved to bottom as secondary utility) */}
+      <div className="mt-8">
+        <Card className="border border-primary/20 bg-primary/5 shadow-xs">
+          <CardContent className="p-6">
+            <form onSubmit={handleQuickAdd} className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="flex items-center gap-2 text-primary shrink-0 select-none">
+                <Sparkles className="icon-card" />
+                <span className="label-text text-primary">Quick Log</span>
+              </div>
+              <input 
+                id="quick-expense-input"
+                type="text" 
+                placeholder='Type what you bought or earned (e.g. Starbucks 5 or Salary 2500)'
+                value={quickAddVal}
+                onChange={(e) => setQuickAddVal(e.target.value)}
+                className="flex-1 w-full bg-background px-3 py-2 rounded-xl text-sm outline-none"
+              />
+              <Button type="submit" size="md" loading={quickAddLoading} className="w-full md:w-auto">
+                Save Entry
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
 
       {/* PAY BILL DIALOG */}
@@ -952,7 +980,7 @@ Input: "${quickAddVal}"`;
 
           <div className="flex justify-between items-center text-xs font-bold text-foreground border-b border-border/40 pb-3">
             <span>Bill Amount:</span>
-            <span className="font-mono text-base">{currencySymbol}{payingBill ? (parseFloat(payingBill.amount) || 0).toFixed(2) : '0.00'}</span>
+            <span className="font-mono text-base">{currencySymbol}{payingBill ? (parseFloat(payingBill.amount) || 0).toFixed(0) : '0'}</span>
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
