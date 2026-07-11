@@ -84,6 +84,7 @@ async function main() {
       DROP TABLE IF EXISTS loan_types CASCADE;
       DROP TABLE IF EXISTS recurrence_types CASCADE;
       DROP TABLE IF EXISTS statuses CASCADE;
+      DROP TABLE IF EXISTS budgets CASCADE;
     `);
 
     // 2. Create master configuration tables
@@ -101,6 +102,7 @@ async function main() {
         name VARCHAR(100) NOT NULL,
         color VARCHAR(50) DEFAULT '#cccccc',
         icon VARCHAR(50) DEFAULT 'Tag',
+        is_system BOOLEAN DEFAULT true,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 
@@ -249,6 +251,18 @@ async function main() {
         created_by UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid()
       );
 
+      CREATE TABLE budgets (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        category_id VARCHAR(50) REFERENCES expense_categories(id) ON DELETE CASCADE,
+        amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+        budget_type_id VARCHAR(50) REFERENCES recurrence_types(id) ON DELETE SET NULL,
+        sort_order INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        created_by UUID REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
+        is_deleted BOOLEAN DEFAULT FALSE
+      );
+
       CREATE TABLE logs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         error_message TEXT NOT NULL,
@@ -272,6 +286,7 @@ async function main() {
       ALTER TABLE bills ENABLE ROW LEVEL SECURITY;
       ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
       ALTER TABLE logs ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
       
       ALTER TABLE currencies ENABLE ROW LEVEL SECURITY;
       ALTER TABLE expense_categories ENABLE ROW LEVEL SECURITY;
@@ -328,6 +343,12 @@ async function main() {
       CREATE POLICY "Users can update own notifications" ON notifications FOR UPDATE TO authenticated USING (auth.uid() = created_by);
       CREATE POLICY "Users can delete own notifications" ON notifications FOR DELETE TO authenticated USING (auth.uid() = created_by);
 
+      -- Budgets Policies
+      CREATE POLICY "Users can insert budgets" ON budgets FOR INSERT TO authenticated WITH CHECK (auth.uid() = created_by);
+      CREATE POLICY "Users can read own budgets" ON budgets FOR SELECT TO authenticated USING (auth.uid() = created_by);
+      CREATE POLICY "Users can update own budgets" ON budgets FOR UPDATE TO authenticated USING (auth.uid() = created_by);
+      CREATE POLICY "Users can delete own budgets" ON budgets FOR DELETE TO authenticated USING (auth.uid() = created_by);
+
       -- Logs Policies
       CREATE POLICY "Anyone can insert logs" ON logs FOR INSERT WITH CHECK (true);
       CREATE POLICY "Users can read own logs" ON logs FOR SELECT TO authenticated USING (auth.uid() = user_id);
@@ -335,6 +356,7 @@ async function main() {
       -- Master tables read access for everyone
       CREATE POLICY "Anyone can read currencies" ON currencies FOR SELECT TO authenticated, anon USING (true);
       CREATE POLICY "Anyone can read expense_categories" ON expense_categories FOR SELECT TO authenticated, anon USING (true);
+      CREATE POLICY "Users can insert custom expense_categories" ON expense_categories FOR INSERT TO authenticated WITH CHECK (true);
       CREATE POLICY "Anyone can read income_categories" ON income_categories FOR SELECT TO authenticated, anon USING (true);
       CREATE POLICY "Anyone can read payment_methods" ON payment_methods FOR SELECT TO authenticated, anon USING (true);
       CREATE POLICY "Anyone can read goal_types" ON goal_types FOR SELECT TO authenticated, anon USING (true);
