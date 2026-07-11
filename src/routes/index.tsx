@@ -12,7 +12,7 @@ import { ProgressCircle } from '../components/ui/ProgressCircle';
 import { Dialog } from '../components/ui/Dialog';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer 
+  Tooltip, ResponsiveContainer, LineChart, Line, BarChart, Bar, Legend
 } from 'recharts';
 
 export const Dashboard: React.FC = () => {
@@ -33,9 +33,10 @@ export const Dashboard: React.FC = () => {
   const [quickAddLoading, setQuickAddLoading] = useState(false);
 
   // Customization Dashboard Layout States
-  const [activeWidgets, setActiveWidgets] = useState<string[]>(['standard', 'wealth', 'goals', 'bills', 'daily', 'merchants']);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
-  const [tempWidgets, setTempWidgets] = useState<string[]>(['standard', 'wealth', 'goals', 'bills', 'daily', 'merchants']);
+  const [spendingFilter, setSpendingFilter] = useState<'month'|'lastMonth'|'year'>('month');
+  const [activeWidgets, setActiveWidgets] = useState<string[]>(['daily', 'wealth', 'goals']);
+  const [tempWidgets, setTempWidgets] = useState<string[]>(['daily', 'wealth', 'goals']);
   const [saveLayoutLoading, setSaveLayoutLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -129,9 +130,14 @@ export const Dashboard: React.FC = () => {
 
   const savingsRate = Math.max(0, Math.round(((monthlyIncome - monthlyExpense) / monthlyIncome) * 100));
 
-  // Budget progress
+  // Budget progress (only for categories with defined budgets)
   const totalBudgeted = budgets.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
-  const budgetPct = totalBudgeted > 0 ? Math.min(100, Math.round((monthlyExpense / totalBudgeted) * 100)) : 0;
+  const budgetedCategoryIds = new Set(budgets.map(b => b.category_id));
+  const budgetedExpense = monthlyTransactions
+    .filter(tx => tx.transaction_type_id === 't0000000-0000-0000-0000-000000000002' && budgetedCategoryIds.has(tx.category_id))
+    .reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+    
+  const budgetPct = totalBudgeted > 0 ? Math.min(100, Math.round((budgetedExpense / totalBudgeted) * 100)) : 0;
 
   // Visual trend chart data dynamically derived from transaction logs
   const getTrendData = () => {
@@ -169,6 +175,103 @@ export const Dashboard: React.FC = () => {
   };
 
   const trendData = getTrendData();
+
+  // --- NEW CHARTS DATA ---
+  
+  // 1. Monthly Cash Flow (last 12 months)
+  const getMonthlyCashFlowData = () => {
+    const data = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const mName = d.toLocaleString('default', { month: 'short' });
+      
+      const monthTxs = transactions.filter(tx => {
+        const txDate = new Date(tx.date);
+        return txDate.getMonth() === d.getMonth() && txDate.getFullYear() === d.getFullYear();
+      });
+      
+      const income = monthTxs
+        .filter(tx => tx.transaction_type_id === 't0000000-0000-0000-0000-000000000001')
+        .reduce((sum, tx) => sum + (parseFloat(tx.amount) || 0), 0);
+        
+      const expense = monthTxs
+        .filter(tx => tx.transaction_type_id === 't0000000-0000-0000-0000-000000000002')
+        .reduce((sum, tx) => sum + (parseFloat(tx.amount) || 0), 0);
+        
+      data.push({ name: mName, Income: Math.round(income), Expenses: Math.round(expense) });
+    }
+    return data;
+  };
+  const cashFlowData = getMonthlyCashFlowData();
+
+  // 2. Spending by Category
+  const [allCats, setAllCats] = useState<any[]>([]);
+  useEffect(() => {
+    supabase.from('expense_categories').select('*').then(({ data }) => {
+      if (data) setAllCats(data);
+    });
+  }, []);
+
+  const getSpendingData = () => {
+    const now = new Date();
+    const filteredTxs = transactions.filter(tx => {
+      if (tx.transaction_type_id !== 't0000000-0000-0000-0000-000000000002') return false;
+      const txDate = new Date(tx.date);
+      if (spendingFilter === 'month') {
+        return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+      } else if (spendingFilter === 'lastMonth') {
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return txDate.getMonth() === lastMonth.getMonth() && txDate.getFullYear() === lastMonth.getFullYear();
+      } else {
+        return txDate.getFullYear() === now.getFullYear();
+      }
+    });
+
+    const categoryMap = new Map<string, number>();
+    filteredTxs.forEach(tx => {
+      const amt = parseFloat(tx.amount) || 0;
+      const catObj = allCats.find((c: any) => c.id === tx.category_id);
+      const catName = catObj ? catObj.name : 'Unknown';
+      categoryMap.set(catName, (categoryMap.get(catName) || 0) + amt);
+    });
+
+    return Array.from(categoryMap.entries())
+      .map(([name, amount]) => ({ name, amount: Math.round(amount) }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 8); // top 8
+  };
+  const spendingData = getSpendingData();
+
+  // 2.5 Budget Usage Data
+  const getBudgetUsageData = () => {
+    return budgets.map(budget => {
+      const catObj = allCats.find((c: any) => c.id === budget.category_id);
+      const name = catObj ? catObj.name : 'Custom';
+      const limit = parseFloat(budget.amount) || 0;
+      
+      const used = monthlyTransactions
+        .filter(tx => tx.transaction_type_id === 't0000000-0000-0000-0000-000000000002' && tx.category_id === budget.category_id)
+        .reduce((sum, tx) => sum + (parseFloat(tx.amount) || 0), 0);
+        
+      return {
+        name,
+        Limit: limit,
+        Used: Math.round(used)
+      };
+    });
+  };
+  const budgetUsageData = getBudgetUsageData();
+
+  // 3. Net Worth Trend (6 months)
+  const getNetWorthData = () => {
+    const currentLiabilities = loans.reduce((sum, l) => sum + (parseFloat(l.outstanding_amount) || 0), 0);
+    return trendData.map(d => ({
+      name: d.name,
+      NetWorth: d.Money - currentLiabilities
+    }));
+  };
+  const netWorthData = getNetWorthData();
 
   // Quick Add NLP Parser (Coffee 5, Uber 20)
   const autoCategorize = (text: string) => {
@@ -416,6 +519,7 @@ Input: "${quickAddVal}"`;
     (categorySums as any)[cId] = ((categorySums as any)[cId] || 0) + (parseFloat(t.amount) || 0);
   });
   
+  // @ts-ignore
   const categoryBreakdown = Object.entries(categorySums).map(([catId, amount]) => {
     let name = 'General Spend';
     if (catId === SEED.expense_categories.food) name = 'Food';
@@ -435,26 +539,6 @@ Input: "${quickAddVal}"`;
 
   const currentDay = new Date().getDate();
   const dailyAverage = monthlyExpense / (currentDay || 1);
-  const velocityDiff = dailyAverage > 0 ? ((spentToday - dailyAverage) / dailyAverage) * 100 : 0;
-
-  // 2. Top Merchants leaderboard calculations
-  const merchantSums: Record<string, { amount: number; count: number }> = {};
-  monthlyTransactions
-    .filter(t => t.transaction_type_id === SEED.transaction_types.expense)
-    .forEach(t => {
-      const name = t.merchant || 'General Payee';
-      if (!merchantSums[name]) {
-        merchantSums[name] = { amount: 0, count: 0 };
-      }
-      merchantSums[name].amount += parseFloat(t.amount) || 0;
-      merchantSums[name].count += 1;
-    });
-  
-  const topMerchants = Object.entries(merchantSums).map(([name, val]) => ({
-    name,
-    amount: val.amount,
-    count: val.count
-  })).sort((a, b) => b.amount - a.amount).slice(0, 5);
 
 
 
@@ -550,40 +634,28 @@ Input: "${quickAddVal}"`;
         
         {/* Left Side: Trends and coach */}
         <div className="lg:col-span-2 space-y-6">
-          
-          {/* Visual balance trend */}
-          {activeWidgets.includes('standard') && (
-            <Card className="rounded-2xl">
-              <CardContent className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-[20px] font-semibold text-foreground">My Balance Trend</h3>
-                  <p className="text-[11px] text-muted-foreground/70 font-light mt-1">Your financial trajectory over the last six months</p>
+
+          {/* Daily Velocity panel */}
+          {activeWidgets.includes('daily') && (
+            <Card>
+              <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none">
+                <div>
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                    <TrendingUp className="h-4.5 w-4.5 text-primary" />
+                    Daily Spend Velocity
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Today vs daily average</p>
                 </div>
-                <div className="h-[150px] lg:h-[160px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={trendData} margin={{ top: 5, right: 0, left: -30, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorMoney" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.4} />
-                      <XAxis dataKey="name" fontSize={11} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} dy={5} />
-                      <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} dx={-5} />
-                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }} />
-                      <Area 
-                        type="monotone" 
-                        dataKey="Money" 
-                        stroke="#6366f1" 
-                        strokeWidth={3} 
-                        fillOpacity={1} 
-                        fill="url(#colorMoney)"
-                        activeDot={{ r: 6, strokeWidth: 0 }}
-                        dot={(props: any) => props.index === trendData.length - 1 ? <circle cx={props.cx} cy={props.cy} r={5} fill="#6366f1" stroke="hsl(var(--card))" strokeWidth={2} key="last-dot" /> : null}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase">Spent Today</span>
+                    <span className="text-sm font-bold text-rose-500 font-mono">{currencySymbol}{spentToday.toFixed(0)}</span>
+                  </div>
+                  <div className="h-6 w-px bg-border/60"></div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase">Daily Avg</span>
+                    <span className="text-sm font-bold text-muted-foreground font-mono">{currencySymbol}{dailyAverage.toFixed(0)}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -593,89 +665,46 @@ Input: "${quickAddVal}"`;
           {activeWidgets.includes('spending') && (
             <Card>
               <CardContent className="p-5 space-y-4">
-                <div className="select-none">
-                  <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                    <TrendingUp className="h-4.5 w-4.5 text-primary" />
-                    Spending Insights
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">Distribution of your expenses by category</p>
+                <div className="select-none flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                      <TrendingUp className="h-4.5 w-4.5 text-primary" />
+                      Spending by Category
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">Top spending categories</p>
+                  </div>
+                  <select 
+                    className="text-xs bg-muted/30 border border-border rounded px-2 py-1 outline-none focus:ring-1 focus:ring-primary"
+                    value={spendingFilter}
+                    onChange={(e: any) => setSpendingFilter(e.target.value)}
+                  >
+                    <option value="month">This Month</option>
+                    <option value="lastMonth">Last Month</option>
+                    <option value="year">This Year</option>
+                  </select>
                 </div>
 
-                {categoryBreakdown.length === 0 ? (
+                {spendingData.length === 0 ? (
                   <div className="py-8 text-center border border-dashed border-border rounded-xl text-xs text-muted-foreground select-none">
-                    No expense records to analyze.
+                    No expense records found for this period.
                   </div>
                 ) : (
-                  <div className="space-y-3.5">
-                    {categoryBreakdown.slice(0, 5).map((item, idx) => {
-                      const totalExp = categoryBreakdown.reduce((sum, c) => sum + c.amount, 0) || 1;
-                      const pct = Math.round((item.amount / totalExp) * 100);
-                      return (
-                        <div key={idx} className="space-y-1.5">
-                          <div className="flex justify-between text-xs font-semibold select-none">
-                            <span className="text-foreground">{item.name}</span>
-                            <span className="font-mono text-sm font-semibold">
-                              {currencySymbol}{item.amount.toFixed(0)} ({pct}%)
-                            </span>
-                          </div>
-                          <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-primary rounded-full transition-all duration-500" 
-                              style={{ width: `${pct}%` }} 
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="h-64 w-full mt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={spendingData} layout="vertical" margin={{ top: 0, right: 30, left: -20, bottom: 0 }} style={{ outline: 'none' }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis type="number" hide />
+                        <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'hsl(var(--foreground))' }} width={100} />
+                        <Tooltip 
+                          cursor={{ fill: 'hsl(var(--muted)/0.3)' }}
+                          contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
+                          formatter={(value: any) => [`${currencySymbol}${value}`, 'Amount']}
+                        />
+                        <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} activeBar={false} style={{ outline: 'none' }} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Daily Velocity panel */}
-          {activeWidgets.includes('daily') && (
-            <Card>
-              <CardContent className="p-5 space-y-4">
-                <div className="select-none">
-                  <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                    <TrendingUp className="h-4.5 w-4.5 text-primary" />
-                    Daily Spend Velocity
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">Today's spending pace compared to your daily average</p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-center select-none">
-                    <div className="p-3 bg-muted/30 rounded-xl border border-border/30">
-                      <span className="text-[8px] font-bold text-muted-foreground uppercase">Spent Today</span>
-                      <div className="flex items-center gap-1.5 text-rose-500 font-mono">
-                        {currencySymbol}{spentToday.toFixed(0)}
-                      </div>
-                    </div>
-                    <div className="p-3 bg-muted/30 rounded-xl border border-border/30">
-                      <span className="text-[8px] font-bold text-muted-foreground uppercase">Daily Average</span>
-                      <div className="flex items-center gap-1.5 text-muted-foreground font-mono">
-                        {currencySymbol}{dailyAverage.toFixed(0)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={`p-4 rounded-xl flex items-center justify-between ${
-                    velocityDiff > 0 ? 'bg-rose-500/5 border border-rose-500/10' : 'bg-emerald-500/5 border border-emerald-500/10'
-                  }`}>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase select-none">Pace Status</span>
-                      <span className={`text-xs font-bold ${velocityDiff > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
-                        {velocityDiff > 0 
-                          ? `${velocityDiff.toFixed(0)}% above normal daily average` 
-                          : `${Math.abs(velocityDiff).toFixed(0)}% below normal daily average`
-                        }
-                      </span>
-                    </div>
-                    <span className="text-base select-none">{velocityDiff > 0 ? '⚠️' : '✓'}</span>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           )}
@@ -684,34 +713,84 @@ Input: "${quickAddVal}"`;
           {activeWidgets.includes('cashflow') && (
             <Card>
               <CardContent className="p-5 space-y-4">
-                <div className="select-none">
-                  <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                    <Wallet className="h-4.5 w-4.5 text-emerald-500" />
-                    Monthly Cash Flow Statement
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">Detailed summary of your income vs expenses</p>
-                </div>
-
-                <div className="space-y-3.5">
-                  <div className="flex justify-between items-center text-sm py-1">
-                    <span className="text-muted-foreground">Inflows</span>
-                    <span className="font-bold text-emerald-500 font-mono">+{currencySymbol}{monthlyIncome.toFixed(0)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm py-1">
-                    <span className="text-muted-foreground">Outflows</span>
-                    <span className="font-bold text-rose-500 font-mono">-{currencySymbol}{monthlyExpense.toFixed(0)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm py-2 mt-1 border-t border-border font-bold">
-                    <span>Net Change</span>
-                    <span className={(monthlyIncome - monthlyExpense) >= 0 ? "text-emerald-500 font-mono" : "text-rose-500 font-mono"}>
-                      {(monthlyIncome - monthlyExpense) >= 0 ? '+' : ''}{currencySymbol}{(monthlyIncome - monthlyExpense).toFixed(0)}
-                    </span>
+                <div className="select-none flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                      <Wallet className="h-4.5 w-4.5 text-emerald-500" />
+                      Monthly Cash Flow
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">Income vs Expenses over the last 12 months</p>
                   </div>
                 </div>
+                
+                {cashFlowData.every(d => d.Income === 0 && d.Expenses === 0) ? (
+                  <div className="py-8 text-center border border-dashed border-border rounded-xl text-xs text-muted-foreground select-none">
+                    No cash flow data available.
+                  </div>
+                ) : (
+                  <div className="h-64 w-full mt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={cashFlowData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} style={{ outline: 'none' }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(val) => `${currencySymbol}${val}`} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
+                          itemStyle={{ padding: '2px 0' }}
+                          formatter={(value: any) => [`${currencySymbol}${value}`, undefined]}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                        <Line type="monotone" dataKey="Income" stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: '#10b981' }} activeDot={false} style={{ outline: 'none' }} />
+                        <Line type="monotone" dataKey="Expenses" stroke="#ef4444" strokeWidth={2} dot={{ r: 3, fill: '#ef4444' }} activeDot={false} style={{ outline: 'none' }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
 
+          {/* Budget Usage panel */}
+          {activeWidgets.includes('budget_usage') && (
+            <Card>
+              <CardContent className="p-5 space-y-4">
+                <div className="select-none flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                      <TrendingUp className="h-4.5 w-4.5 text-primary" />
+                      Budget Usage
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">Compare spending to your set limits</p>
+                  </div>
+                </div>
+
+                {budgetUsageData.length === 0 ? (
+                  <div className="py-8 text-center border border-dashed border-border rounded-xl text-xs text-muted-foreground select-none">
+                    No active budget limits set.
+                  </div>
+                ) : (
+                  <div className="h-64 w-full mt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={budgetUsageData} layout="vertical" margin={{ top: 0, right: 30, left: -20, bottom: 0 }} style={{ outline: 'none' }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis type="number" hide />
+                        <YAxis yAxisId="0" type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'hsl(var(--foreground))' }} width={100} />
+                        <YAxis yAxisId="1" type="category" dataKey="name" hide />
+                        <Tooltip 
+                          cursor={{ fill: 'hsl(var(--muted)/0.3)' }}
+                          contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
+                          formatter={(value: any) => [`${currencySymbol}${value}`, undefined]}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                        <Bar yAxisId="0" dataKey="Limit" fill="hsl(var(--muted-foreground)/0.2)" radius={4} activeBar={false} style={{ outline: 'none' }} barSize={12} />
+                        <Bar yAxisId="1" dataKey="Used" fill="hsl(var(--primary))" radius={4} activeBar={false} style={{ outline: 'none' }} barSize={12} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right Side: Next payments & quick launch actions */}
@@ -724,47 +803,32 @@ Input: "${quickAddVal}"`;
                 <div className="select-none">
                   <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                     <TrendingUp className="h-4.5 w-4.5 text-emerald-500" />
-                    Savings & Net Worth
+                    Net Worth Trend
                   </h3>
-                  <p className="text-[11px] text-muted-foreground">Assets minus liabilities & goal progress</p>
+                  <p className="text-[11px] text-muted-foreground">Assets minus liabilities over time</p>
                 </div>
 
-                {(() => {
-                  const checkingSavings = totalBalance;
-                  const liabilities = loans.reduce((sum, l) => sum + (parseFloat(l.outstanding_amount) || 0), 0);
-                  const netWorth = checkingSavings - liabilities;
-                  
-                  return (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-3 text-center py-1 select-none">
-                        <div className="p-2.5 bg-muted/30 rounded-xl border border-border/30">
-                          <span className="text-[8px] font-bold text-muted-foreground uppercase">Liquid Assets</span>
-                          <div className="text-xs font-bold text-emerald-500 mt-1">
-                            {currencySymbol}{checkingSavings.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                          </div>
-                        </div>
-                        <div className="p-2.5 bg-muted/30 rounded-xl border border-border/30">
-                          <span className="text-[8px] font-bold text-muted-foreground uppercase">Liabilities</span>
-                          <div className="text-xs font-bold text-destructive mt-1">
-                            {currencySymbol}{liabilities.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span className="text-[8px] font-bold text-muted-foreground uppercase select-none">Total Net Worth</span>
-                          <span className="text-base font-bold text-foreground mt-0.5">
-                            {currencySymbol}{netWorth.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                          </span>
-                        </div>
-                        <div className={`h-7 w-7 rounded-full flex items-center justify-center font-bold text-xs ${netWorth >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                          {netWorth >= 0 ? '✓' : '⚠️'}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
+                <div className="h-48 mt-2 w-full px-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={netWorthData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorNetWorth" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(val) => `${currencySymbol}${val}`} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
+                        itemStyle={{ padding: '2px 0' }}
+                        formatter={(value: any) => [`${currencySymbol}${value}`, 'Net Worth']}
+                      />
+                      <Area type="monotone" dataKey="NetWorth" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorNetWorth)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -877,46 +941,7 @@ Input: "${quickAddVal}"`;
             </Card>
           )}
 
-          {/* Top Merchants leaderboard panel */}
-          {activeWidgets.includes('merchants') && (
-            <Card className="order-2">
-              <CardContent className="p-5 space-y-4">
-                <div className="select-none">
-                  <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                    <Sparkles className="h-4.5 w-4.5 text-primary" />
-                    Top Merchants
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">Places you spend money most frequently</p>
-                </div>
 
-                {topMerchants.length === 0 ? (
-                  <div className="py-8 text-center border border-dashed border-border rounded-xl text-xs text-muted-foreground select-none">
-                    No expenditures this month to analyze.
-                  </div>
-                ) : (
-                  <div className="space-y-3.5">
-                    {topMerchants.map((merchant, idx) => {
-                      const totalExpenses = topMerchants.reduce((sum, m) => sum + m.amount, 0) || 1;
-                      const pct = Math.round((merchant.amount / totalExpenses) * 100);
-                      return (
-                        <div key={idx} className="flex justify-between items-center text-xs border-b border-border/30 pb-2 last:border-0 last:pb-0">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-foreground">{merchant.name}</span>
-                            <span className="text-[9px] text-muted-foreground mt-0.5">
-                              {merchant.count} transaction{merchant.count === 1 ? '' : 's'} ({pct}%)
-                            </span>
-                          </div>
-                          <div className="font-mono font-bold text-foreground">
-                            {currencySymbol}{merchant.amount.toFixed(0)}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
           {/* Quick launch guide */}
           <Card className="order-3">
@@ -1007,14 +1032,14 @@ Input: "${quickAddVal}"`;
 
           <div className="space-y-3">
             {[
-              { id: 'standard', title: 'Balance Trend Chart', desc: 'Six-month balance progression and financial trajectory.' },
               { id: 'spending', title: 'Spending Insights', desc: 'Category-wise spending distribution with progress bars.' },
+              { id: 'budget_usage', title: 'Budget Usage', desc: 'Compare your monthly spending against active category limits.' },
               { id: 'daily', title: 'Daily Spend Velocity', desc: 'Analyze spent today compared to daily monthly average.' },
               { id: 'cashflow', title: 'Monthly Cash Flow', desc: 'Detailed summary of monthly income vs expenses.' },
               { id: 'wealth', title: 'Net Worth Statement', desc: 'Assets vs outstanding loan liabilities comparison.' },
               { id: 'goals', title: 'Savings Progress', desc: 'Standalone progress indicator tracking active savings goals.' },
               { id: 'bills', title: 'Upcoming Bills Due', desc: 'List of next 3 due bills and repayment statuses.' },
-              { id: 'merchants', title: 'Top Merchants Leaderboard', desc: 'Leaderboard of places you spent money most frequently.' }
+
             ].map((widget) => {
               const isChecked = tempWidgets.includes(widget.id);
               return (
