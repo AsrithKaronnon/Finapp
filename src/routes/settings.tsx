@@ -1,4 +1,5 @@
 // @ts-nocheck
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { 
@@ -265,15 +266,33 @@ export const Settings: React.FC = () => {
       return;
     }
 
+    const newBudget = {
+      category_id: catId,
+      amount: newBudgetAmount,
+      budget_type_id: SEED.recurrences.monthly,
+      sort_order: userBudgets.length
+    };
+    
+    let budgetId;
+    try {
+      const { data: insertedBudget } = await supabase.from('budgets').insert([newBudget]).select().single();
+      budgetId = insertedBudget ? insertedBudget.id : undefined;
+    } catch (err) {
+      console.error('Failed to auto-save new budget:', err);
+    }
+
     setUserBudgets([
       ...userBudgets,
-      { category_id: catId, amount: newBudgetAmount, sort_order: userBudgets.length, name: catName, is_system: catId !== 'custom' && categories.find(c => c.id === catId)?.is_system !== false }
+      { id: budgetId, category_id: catId, amount: newBudgetAmount, sort_order: userBudgets.length, name: catName, is_system: catId !== 'custom' && categories.find(c => c.id === catId)?.is_system !== false }
     ]);
     
     setIsAddingBudget(false);
     setNewBudgetCategory('');
     setNewBudgetCustomName('');
     setNewBudgetAmount(0);
+
+    setBudgetsMsg('Category added and saved successfully!');
+    setTimeout(() => setBudgetsMsg(''), 3000);
   };
 
   const handleSaveBudgets = async (e: React.FormEvent) => {
