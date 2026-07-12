@@ -16,19 +16,21 @@ export default defineConfig({
         name: 'Finapp',
         short_name: 'Finapp',
         description: 'Modern Personal Finance Tracker',
-        theme_color: '#4F46E5',
-        background_color: '#FAFAFA',
+        theme_color: '#000000',
+        background_color: '#000000',
         display: 'standalone',
         icons: [
           {
             src: 'icon-192x192.jpg',
             sizes: '192x192',
-            type: 'image/jpeg'
+            type: 'image/jpeg',
+            purpose: 'any maskable'
           },
           {
             src: 'icon-512x512.jpg',
             sizes: '512x512',
-            type: 'image/jpeg'
+            type: 'image/jpeg',
+            purpose: 'any maskable'
           }
         ]
       }
