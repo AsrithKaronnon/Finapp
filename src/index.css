@@ -293,3 +293,8 @@ svg.lucide {
 .shadow-dialog {
   box-shadow: 0 10px 30px rgba(0,0,0,.08) !important;
 }
+
+/* Remove Recharts Focus Outline */
+.recharts-wrapper, .recharts-surface {
+  outline: none !important;
+}

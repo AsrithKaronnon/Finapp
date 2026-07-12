@@ -12,7 +12,7 @@ import { ProgressCircle } from '../components/ui/ProgressCircle';
 import { Dialog } from '../components/ui/Dialog';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, LineChart, Line, BarChart, Bar, Legend
+  Tooltip, ResponsiveContainer, LineChart, Line, BarChart, Bar, Legend, LabelList
 } from 'recharts';
 
 export const Dashboard: React.FC = () => {
@@ -714,7 +714,9 @@ Input: "${quickAddVal}"`;
                           contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }}
                           formatter={(value: any) => [`${currencySymbol}${value}`, 'Amount']}
                         />
-                        <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} activeBar={false} style={{ outline: 'none' }} />
+                        <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} activeBar={false} style={{ outline: 'none' }}>
+                          <LabelList dataKey="amount" position="right" formatter={(val: any) => `${currencySymbol}${val}`} fill="hsl(var(--foreground))" fontSize={10} className="md:hidden" />
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -754,8 +756,12 @@ Input: "${quickAddVal}"`;
                           formatter={(value: any) => [`${currencySymbol}${value}`, undefined]}
                         />
                         <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                        <Line type="monotone" dataKey="Income" stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: '#10b981' }} activeDot={false} style={{ outline: 'none' }} />
-                        <Line type="monotone" dataKey="Expenses" stroke="#ef4444" strokeWidth={2} dot={{ r: 3, fill: '#ef4444' }} activeDot={false} style={{ outline: 'none' }} />
+                        <Line type="monotone" dataKey="Income" stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: '#10b981' }} activeDot={false} style={{ outline: 'none' }}>
+                          <LabelList dataKey="Income" position="top" formatter={(val: any) => `${currencySymbol}${val}`} fill="#10b981" fontSize={9} className="md:hidden" />
+                        </Line>
+                        <Line type="monotone" dataKey="Expenses" stroke="#ef4444" strokeWidth={2} dot={{ r: 3, fill: '#ef4444' }} activeDot={false} style={{ outline: 'none' }}>
+                          <LabelList dataKey="Expenses" position="bottom" formatter={(val: any) => `${currencySymbol}${val}`} fill="#ef4444" fontSize={9} className="md:hidden" />
+                        </Line>
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -797,7 +803,9 @@ Input: "${quickAddVal}"`;
                         />
                         <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                         <Bar yAxisId="0" dataKey="Limit" fill="hsl(var(--muted-foreground)/0.2)" radius={4} activeBar={false} style={{ outline: 'none' }} barSize={12} />
-                        <Bar yAxisId="1" dataKey="Used" fill="hsl(var(--primary))" radius={4} activeBar={false} style={{ outline: 'none' }} barSize={12} />
+                        <Bar yAxisId="1" dataKey="Used" fill="hsl(var(--primary))" radius={4} activeBar={false} style={{ outline: 'none' }} barSize={12}>
+                          <LabelList dataKey="Used" position="right" formatter={(val: any) => `${currencySymbol}${val}`} fill="hsl(var(--foreground))" fontSize={9} className="md:hidden" />
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -839,7 +847,9 @@ Input: "${quickAddVal}"`;
                         itemStyle={{ padding: '2px 0' }}
                         formatter={(value: any) => [`${currencySymbol}${value}`, 'Net Worth']}
                       />
-                      <Area type="monotone" dataKey="NetWorth" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorNetWorth)" />
+                      <Area type="monotone" dataKey="NetWorth" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorNetWorth)">
+                        <LabelList dataKey="NetWorth" position="top" formatter={(val: any) => `${currencySymbol}${val}`} fill="#10b981" fontSize={9} className="md:hidden" />
+                      </Area>
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
