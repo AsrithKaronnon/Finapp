@@ -409,6 +409,8 @@ Input: "${quickAddVal}"`;
     ? incomeCategories
     : expenseCategories;
 
+  const isTransfer = formData.transaction_type_id === SEED.transaction_types.transfer;
+
   return (
     <div className="flex flex-col gap-6">
       
@@ -481,9 +483,10 @@ Input: "${quickAddVal}"`;
           ) : (
             filteredTransactions.map((tx) => {
               const isIncome = tx.transaction_type_id === SEED.transaction_types.income;
+              const isTransferTx = tx.transaction_type_id === SEED.transaction_types.transfer;
               const catName = isIncome
                 ? incomeCategories.find(c => c.id === tx.category_id)?.name || 'General Income'
-                : expenseCategories.find(c => c.id === tx.category_id)?.name || 'General Spend';
+                : (isTransferTx ? 'Adjustment' : expenseCategories.find(c => c.id === tx.category_id)?.name || 'General Spend');
 
               return (
                 <div 
@@ -492,8 +495,8 @@ Input: "${quickAddVal}"`;
                 >
                   {/* Left block description */}
                   <div className="flex items-center gap-3 min-w-0 w-full sm:flex-1">
-                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center font-bold text-[11px] select-none shrink-0 ${isIncome ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/10 text-primary'}`}>
-                      {isIncome ? 'I' : 'S'}
+                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center font-bold text-[11px] select-none shrink-0 ${isIncome ? 'bg-emerald-500/10 text-emerald-500' : isTransferTx ? 'bg-blue-500/10 text-blue-500' : 'bg-primary/10 text-primary'}`}>
+                      {isIncome ? 'I' : isTransferTx ? 'A' : 'S'}
                     </div>
                     <div className="flex flex-col min-w-0">
                       <span className="text-[13px] font-extrabold text-foreground truncate leading-tight">{tx.merchant}</span>
@@ -510,8 +513,8 @@ Input: "${quickAddVal}"`;
 
                   {/* Right block amount & actions */}
                   <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-2 sm:pt-0 shrink-0 border-t border-border/10 sm:border-none">
-                    <span className={`text-[13px] font-mono font-bold text-right sm:w-[100px] ${isIncome ? 'text-emerald-500/90' : 'text-foreground/75 dark:text-gray-300'}`}>
-                      {isIncome ? '+' : '-'}{currencySymbol}{(parseFloat(tx.amount) || 0).toFixed(0)}
+                    <span className={`text-[13px] font-mono font-bold text-right sm:w-[100px] ${isIncome ? 'text-emerald-500/90' : isTransferTx ? 'text-blue-500/90' : 'text-foreground/75 dark:text-gray-300'}`}>
+                      {isIncome || parseFloat(tx.amount) > 0 ? '+' : '-'}{currencySymbol}{Math.abs(parseFloat(tx.amount) || 0).toFixed(0)}
                     </span>
                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
@@ -567,6 +570,7 @@ Input: "${quickAddVal}"`;
               >
                 <option value={SEED.transaction_types.expense}>Spend (Expense)</option>
                 <option value={SEED.transaction_types.income}>Income</option>
+                <option value={SEED.transaction_types.transfer}>Transfer / Adjustment</option>
               </select>
             </div>
             <div className="flex flex-col gap-1">
@@ -594,7 +598,9 @@ Input: "${quickAddVal}"`;
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-bold text-muted-foreground">Amount ({currencySymbol})</label>
+              <label className="text-[11px] font-bold text-muted-foreground">
+                Amount ({currencySymbol}) {isTransfer && <span className="font-normal opacity-80">- Use negative for Money Out</span>}
+              </label>
               <input
                 type="number"
                 step="0.01"
@@ -606,16 +612,18 @@ Input: "${quickAddVal}"`;
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold text-muted-foreground">Category</label>
-            <select
-              value={formData.category_id}
-              onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              {activeCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
+          {!isTransfer && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-bold text-muted-foreground">Category</label>
+              <select
+                value={formData.category_id}
+                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                {activeCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
 
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-bold text-muted-foreground">Account</label>

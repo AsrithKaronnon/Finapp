@@ -167,7 +167,11 @@ export const Dashboard: React.FC = () => {
         .filter(tx => tx.transaction_type_id === 't0000000-0000-0000-0000-000000000002')
         .reduce((sum, tx) => sum + (parseFloat(tx.amount) || 0), 0);
          
-      const net = inc - exp;
+      const trn = monthTxs
+        .filter(tx => tx.transaction_type_id === 't0000000-0000-0000-0000-000000000003')
+        .reduce((sum, tx) => sum + (parseFloat(tx.amount) || 0), 0);
+         
+      const net = inc - exp + trn;
       runningBalance -= net; // Walk backward in time
     }
     
